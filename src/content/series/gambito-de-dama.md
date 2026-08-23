@@ -6,4 +6,6 @@ episodes: 7
 status: "done"
 tier: "S"
 seasons: 1
+cover: ./gambito-de-dama.jpg
+accent: "#c07f5a"
 ---

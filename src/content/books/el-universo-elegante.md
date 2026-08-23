@@ -8,4 +8,5 @@ tier: "A"
 genre: "Ciencia"
 physical: true
 cover: ./el-universo-elegante.jpg
+accent: "#5ab5c1"
 ---

@@ -6,4 +6,6 @@ episodes: 71
 status: "done"
 tier: "S"
 seasons: 7
+cover: ./rick-y-morty.jpg
+accent: "#ef8443"
 ---

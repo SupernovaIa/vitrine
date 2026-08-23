@@ -3,7 +3,7 @@
  * Attaches a cover to an entry: normalises the image, derives the accent colour
  * from it, and writes both into the entry's frontmatter.
  *
- * Usage: node scripts/add-cover.mjs <medium> <slug> <image>
+ * Usage: node scripts/add-cover.mjs <medium> <slug> <image> [--accent #rrggbb]
  *   node scripts/add-cover.mjs games hollow-knight ~/Downloads/hk.png
  */
 import { readFile, writeFile, access, stat } from "node:fs/promises";
@@ -12,7 +12,14 @@ import { dirname, join, resolve } from "node:path";
 import sharp from "sharp";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const [medium, slug, imagePath] = process.argv.slice(2);
+const argv = process.argv.slice(2);
+const forcedAccent = argv.includes("--accent") ? argv[argv.indexOf("--accent") + 1] : null;
+const [medium, slug, imagePath] = argv;
+
+if (forcedAccent && !/^#[0-9a-fA-F]{6}$/.test(forcedAccent)) {
+  console.error(`--accent espera #rrggbb, no ${forcedAccent}`);
+  process.exit(1);
+}
 
 if (!medium || !slug || !imagePath) {
   console.error("uso: node scripts/add-cover.mjs <medium> <slug> <imagen>");
@@ -65,7 +72,20 @@ const written = await sharp(out).metadata();
  * grey to carry a hue, and pick the hue bucket with the most chromatic weight.
  * That finds the cyan a viewer would name if you asked them the cover's colour.
  */
-const accent = await extractAccent(out);
+/*
+ * The extraction below is right about the *field* colour and wrong when the
+ * field is dark and a minority of the cover is bright: El universo elegante is
+ * black with a teal-and-orange nebula, and it answered with a muddy brown,
+ * because the orange filaments are numerous but sit at lightness 0.26 while the
+ * teal core sits at 0.53. Weighting for vividness instead fixes that one cover
+ * and breaks two others — it starts chasing small bright details, taking the
+ * green strip on Mujeres de ciencia over its maroon field, and the red of
+ * SCOTT KELLY over Endurance's blue. Two regressions for one fix is not a
+ * trade, so the algorithm stays and --accent exists for the exceptions. Pass a
+ * colour that is *in* the cover; the point of the field is to match the artwork,
+ * not to decorate.
+ */
+const accent = forcedAccent ?? (await extractAccent(out));
 
 async function extractAccent(file) {
   const { data, info } = await sharp(file)
@@ -130,7 +150,7 @@ const kb = async (f) => `${Math.round((await stat(f)).size / 1024)} KB`;
 console.log(`${medium}/${slug}`);
 console.log(`  imagen  ${meta.width}×${meta.height} ${meta.format} → ${written.width}×${written.height} jpg`);
 console.log(`  peso    ${await kb(resolve(imagePath))} → ${await kb(out)}`);
-console.log(`  accent  ${accent ?? "(sin color legible: usa el del medio)"}`);
+console.log(`  accent  ${accent ?? "(sin color legible: usa el del medio)"}${forcedAccent ? " (a mano)" : ""}`);
 
 /* Hue/saturation/lightness conversions. Declarations, so hoisting lets the work
    above call them before they appear here. */
