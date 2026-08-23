@@ -134,10 +134,26 @@ const progress = progressLabel(item);
     opacity: 0.9;
   }
 
+  /*
+    Over artwork the glyph gets its own ground instead of a text-shadow. It sits
+    in the top corner, where the foot scrim does not reach, so it was measured at
+    1.00:1 on a white book cover — a white mark on white paper — and 2.55:1 on a
+    cyan one. Veiling the top of the poster to fix it would need ~65% opacity
+    over the art; a 20px chip costs nothing and pairs with the tier badge in the
+    opposite corner. On this ground the same mark measures above 11:1.
+  */
   .cover--art .cover__glyph {
+    display: grid;
+    place-items: center;
+    width: 20px;
+    height: 20px;
+    font-size: var(--text-sm);
     color: #fff;
-    opacity: 0.85;
-    text-shadow: 0 1px 6px rgb(0 0 0 / 0.8);
+    opacity: 1;
+    background: var(--scrim-strong);
+    backdrop-filter: blur(4px);
+    border-radius: var(--radius-sm);
+    box-shadow: 0 2px 8px rgb(0 0 0 / 0.5);
   }
 
   /* Anchored to the bottom of the tile: everything above is breathing room, so

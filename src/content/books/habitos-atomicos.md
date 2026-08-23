@@ -6,4 +6,6 @@ status: "done"
 tier: "S"
 genre: "Ciencia"
 physical: true
+cover: ./habitos-atomicos.jpg
+accent: "#6b96c7"
 ---
