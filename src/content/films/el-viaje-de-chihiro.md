@@ -1,7 +1,8 @@
 ---
 title: "El viaje de Chihiro"
 year: 2001
-by: "Studio Ghibli"
+runtime: 125
+by: "Hayao Miyazaki"
 status: "done"
 tier: "B"
 ---

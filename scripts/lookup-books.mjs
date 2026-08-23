@@ -17,6 +17,7 @@ const jsonOut = process.argv.includes("--json")
   ? process.argv[process.argv.indexOf("--json") + 1]
   : null;
 
+const overrides = JSON.parse(await readFile("scripts/title-overrides.json", "utf8"));
 const dir = "src/content/books";
 const files = (await readdir(dir)).filter((f) => f.endsWith(".md")).sort();
 
@@ -38,7 +39,7 @@ const results = [];
 for (const file of files) {
   const data = frontmatter(await readFile(join(dir, file), "utf8"));
   const url = "https://openlibrary.org/search.json?" + new URLSearchParams({
-    title: data.title,
+    title: overrides[`books/${file.replace(/\.md$/, "")}`] ?? data.title,
     ...(data.by ? { author: data.by } : {}),
     fields: "title,author_name,first_publish_year,number_of_pages_median,key",
     limit: "5",

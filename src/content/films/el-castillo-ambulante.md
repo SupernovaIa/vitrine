@@ -1,7 +1,8 @@
 ---
 title: "El castillo ambulante"
 year: 2004
-by: "Studio Ghibli"
+runtime: 119
+by: "Hayao Miyazaki"
 status: "done"
 tier: "B"
 ---

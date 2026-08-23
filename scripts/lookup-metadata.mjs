@@ -21,7 +21,7 @@ const jsonOut = rest.includes("--json") ? rest[rest.indexOf("--json") + 1] : nul
 /** Type constraint per medium, so a chess opening cannot answer for a TV series. */
 const SHAPE = {
   films: { type: "wd:Q11424", props: { by: "P57", runtime: "P2047", genre: "P136" }, label: "película" },
-  series: { type: "wd:Q5398426", props: { by: "P170", episodes: "P1113", genre: "P136" }, label: "serie" },
+  series: { type: "wd:Q5398426", props: { by: "P170", episodes: "P1113", seasons: "P2437", genre: "P136" }, label: "serie" },
   books: { type: "wd:Q7725634", props: { by: "P50", pages: "P1104", year: "P577", genre: "P136" }, label: "obra escrita" },
   games: { type: "wd:Q7889", props: { by: "P178", genre: "P136" }, label: "videojuego" },
 };
@@ -31,6 +31,10 @@ if (!SHAPE[medium]) {
   process.exit(1);
 }
 const shape = SHAPE[medium];
+
+/* Titles the databases cannot reach from the shelf's own wording. Only the
+   identifier is overridden; the facts still come from the source. */
+const overrides = JSON.parse(await readFile("scripts/title-overrides.json", "utf8"));
 
 const dir = join("src/content", medium);
 const files = (await readdir(dir)).filter((f) => f.endsWith(".md")).sort();
@@ -88,7 +92,7 @@ const byLabel = async (title, year, lang) => {
 ${props}
 ${yearFilter}
   SERVICE wikibase:label { bd:serviceParam wikibase:language "es,en". }
-} LIMIT 20`;
+} LIMIT 300`;
   return sparql(query);
 };
 
@@ -133,14 +137,17 @@ const fold = (s) =>
 const results = [];
 for (const file of files) {
   const data = frontmatter(await readFile(join(dir, file), "utf8"));
-  const title = data.title;
+  const slug = file.replace(/\.md$/, "");
+  const title = overrides[`${medium}/${slug}`] ?? data.title;
   let rows = [];
   let err = null;
   try {
-    /* Accurate path first. */
+    /* Both languages, unioned rather than chained. Chaining stopped at the first
+       language that returned anything, and Spanish returned the 1943, 1953 and
+       1996 Titanics — so Cameron's, which carries no Spanish label at all, was
+       never reachable. The authorship tie-break below then picks the right one. */
     for (const lang of ["es", "en"]) {
-      rows = await byLabel(title, data.year, lang);
-      if (rows.length) break;
+      rows = rows.concat(await byLabel(title, data.year, lang));
       await new Promise((r) => setTimeout(r, 250));
     }
     /* Fuzzy fallback only for what the exact match could not reach. */
@@ -153,7 +160,7 @@ for (const file of files) {
     err = e.message;
   }
 
-  const gather = (key) => {
+  let gather = (key) => {
     let vals = [...new Set(rows.map((r) => r[`${key}Label`]?.value).filter(Boolean))];
     vals = vals.filter((v) => !isUnresolved(v));
     if (key === "runtime") {
@@ -161,7 +168,39 @@ for (const file of files) {
     }
     return vals;
   };
-  const qids = [...new Set(rows.map((r) => r.item.value.split("/").pop()))];
+  let qids = [...new Set(rows.map((r) => r.item.value.split("/").pop()))];
+
+  /* When more than one work answers to a title, the entry's own author decides
+     which. This is what separates Cameron's Titanic from the 1996 miniseries and
+     Linklater's Before Midnight from its two namesakes — the same check that used
+     to only reject now also selects. */
+  /* Series have no author, but they do have a season count, and it separates a
+     show from its foreign remake: How I Met Your Mother has 9, the Russian
+     version 40 episodes across far fewer. */
+  if (qids.length > 1 && data.seasons) {
+    const want = String(parseInt(data.seasons, 10));
+    const agrees = rows.filter((r) => r.seasonsLabel?.value === want);
+    const picked = [...new Set(agrees.map((r) => r.item.value.split("/").pop()))];
+    if (picked.length === 1) {
+      rows = rows.filter((r) => r.item.value.endsWith(picked[0]));
+      qids = picked;
+    }
+  }
+
+  if (qids.length > 1 && data.by) {
+    const mine = fold(data.by).split(" ").filter((w) => w.length > 3);
+    const agrees = rows.filter((r) => {
+      const cred = r.byLabel?.value;
+      if (!cred || isUnresolved(cred)) return false;
+      const words = fold(cred).split(" ");
+      return mine.some((w) => words.includes(w));
+    });
+    const picked = [...new Set(agrees.map((r) => r.item.value.split("/").pop()))];
+    if (picked.length === 1) {
+      rows = rows.filter((r) => r.item.value.endsWith(picked[0]));
+      qids = picked;
+    }
+  }
 
   /* Verification, where the entry already knows the answer. Films and books
      record their own author, so a Wikidata creator that disagrees means the
