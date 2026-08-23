@@ -2,10 +2,7 @@
 import Cover from "./Cover.astro";
 import Tier from "./Tier.astro";
 import {
-  MEDIA,
   accentOf,
-  metaLine,
-  progressLabel,
   progressOf,
   tierOf,
   undecided,
@@ -15,20 +12,20 @@ import {
 interface Props {
   item: Item;
   eager?: boolean;
+  /** Rendered width of the tile, passed through so Astro emits the right image. */
+  width?: number;
+  /**
+   * Shows the one-line verdict under the tile. Only the canon row asks for it:
+   * the archive tiles stay identical in height so the wall reads as a grid.
+   */
+  claim?: boolean;
 }
 
-const { item, eager = false } = Astro.props;
+const { item, eager = false, width = 240, claim = false } = Astro.props;
 const { data } = item;
 const progress = progressOf(item);
-const label = progressLabel(item);
 const queued = data.status === "pending";
 const tier = tierOf(item);
-/* A blank cover *is* a title card, so repeating the title underneath it reads
-   as a duplication bug. Only real artwork needs a caption. */
-const titled = Boolean(data.cover);
-/* A blank cover already carries author and year, so the only caption worth
-   adding under one is progress — the thing artwork can never show. */
-const caption = titled || Boolean(label);
 ---
 
 <a
@@ -40,7 +37,7 @@ const caption = titled || Boolean(label);
   style={`--item-accent: ${accentOf(item)}`}
 >
   <div class="card__poster">
-    <Cover item={item} width={240} eager={eager} />
+    <Cover item={item} width={width} eager={eager} />
 
     {
       (tier || undecided(item)) && (
@@ -62,25 +59,23 @@ const caption = titled || Boolean(label);
     }
   </div>
 
-  {
-    caption && (
-      <div class="card__body">
-        {titled && <h3 class="card__title">{data.title}</h3>}
-        <p class="card__meta mono">
-          {label ? label : metaLine(item, { compact: true })}
-          {label && <span class="card__sep">·</span>}
-          {label && <span class="card__dim">{MEDIA[item.medium].one}</span>}
-        </p>
-      </div>
-    )
-  }
+  {claim && data.hook && <p class="card__claim">{data.hook}</p>}
 </a>
 
 <style>
   .card {
-    display: grid;
-    gap: var(--space-3);
-    align-content: start;
+    display: block;
+  }
+
+  /* The author's own sentence about the thing. Serif, because it is a claim and
+     not metadata — and it is the only copy on the shelf that is not a title. */
+  .card__claim {
+    margin: var(--space-3) 0 0;
+    font-family: var(--font-serif);
+    font-size: var(--text-sm);
+    line-height: 1.45;
+    color: var(--fg-muted);
+    text-wrap: pretty;
   }
 
   .card__poster {
@@ -152,32 +147,4 @@ const caption = titled || Boolean(label);
     background: var(--item-accent);
   }
 
-  .card__body {
-    display: grid;
-    gap: 3px;
-  }
-
-  .card__title {
-    font-size: var(--text-sm);
-    font-weight: 500;
-    letter-spacing: 0;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-
-  .card__meta {
-    margin: 0;
-    font-size: var(--text-mono-xs);
-    color: var(--fg-subtle);
-    display: flex;
-    gap: var(--space-1);
-    align-items: baseline;
-  }
-
-  .card__sep,
-  .card__dim {
-    color: var(--fg-subtle);
-  }
 </style>

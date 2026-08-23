@@ -85,21 +85,46 @@ const tierRank = (item: Item) => {
 };
 
 /**
- * Default shelf order: what you finished and rated highest first, then what is
- * in flight, then the backlog.
+ * Default shelf order: finished first, then in flight, then the backlog; and
+ * within each, newest release first.
  *
- * Not chronological, because no imported entry has a date — sorting by "recent
- * activity" would silently order 73 things by nothing at all. Add `finished`
- * dates and this is the function to revisit.
+ * Deliberately *not* sorted by tier. It used to be, and that made the first ten
+ * shelf cards a verbatim copy of the Tier S row above them — same items, same
+ * order. Release year is the only temporal axis this data has (no entry records
+ * when it was consumed), and ordering by it mixes the media and the tiers, which
+ * is what the shelf is for. The canon lives in its own row.
+ *
+ * Undated entries sort last rather than first: `?? 0` would have put the seven
+ * yearless books at the top of the backlog.
  */
 function shelfOrder(a: Item, b: Item) {
   const byStatus = (STATUS[a.data.status]?.rank ?? 9) - (STATUS[b.data.status]?.rank ?? 9);
   if (byStatus !== 0) return byStatus;
+  const ya = (a.data.year as number) ?? -Infinity;
+  const yb = (b.data.year as number) ?? -Infinity;
+  if (ya !== yb) return yb - ya;
   const byTier = tierRank(a) - tierRank(b);
   if (byTier !== 0) return byTier;
-  const byYear = ((b.data.year as number) ?? 0) - ((a.data.year as number) ?? 0);
-  if (byYear !== 0) return byYear;
   return (a.data.title as string).localeCompare(b.data.title as string, "es");
+}
+
+/**
+ * Where to go next from an entry, by rule rather than by hand — an entry page
+ * with one outbound link is a dead end, and nothing here can depend on data the
+ * author has not written yet.
+ *
+ * Same tier first, and across media on purpose: "other things I rated this
+ * highly" is the comparison no single-medium tracker can make, and it is the
+ * whole positioning claim. Same medium fills the rest.
+ */
+export function siblingsOf(item: Item, all: Item[], limit = 6): Item[] {
+  const others = all.filter((i) => i.url !== item.url);
+  const tier = tierOf(item);
+  const sameTier = tier ? others.filter((i) => tierOf(i) === tier) : [];
+  const sameMedium = others.filter(
+    (i) => i.medium === item.medium && !sameTier.includes(i),
+  );
+  return [...sameTier, ...sameMedium].slice(0, limit);
 }
 
 /** Tier S, the things worth pressing on other people. Best first. */

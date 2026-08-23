@@ -1,72 +1,96 @@
 ---
 import { Image } from "astro:assets";
-import { MEDIA, accentOf, type Item } from "../lib/media";
+import { MEDIA, accentOf, progressLabel, type Item } from "../lib/media";
 
 interface Props {
   item: Item;
   /** Rendered width in CSS pixels, so Astro emits the right candidates. */
   width?: number;
   eager?: boolean;
+  /**
+   * Whether the tile names itself. False where a heading already does — the
+   * detail page printed title, author and year twice, 200px apart, on 72 of 73
+   * entries.
+   */
+  caption?: boolean;
 }
 
-const { item, width = 240, eager = false } = Astro.props;
+const { item, width = 240, eager = false, caption = true } = Astro.props;
 const cover = item.data.cover;
 const medium = MEDIA[item.medium];
+/* Folded into the year line rather than captioned below the tile, so a card in
+   progress is exactly as tall as every other card. */
+const progress = progressLabel(item);
 ---
 
-{
-  cover ? (
-    <Image
-      class="cover"
-      src={cover}
-      alt={`Portada de ${item.data.title}`}
-      widths={[width, width * 2]}
-      sizes={`${width}px`}
-      loading={eager ? "eager" : "lazy"}
-      style={`--item-accent: ${accentOf(item)}`}
-    />
-  ) : (
-    /* No cover is a first-class state, not a failure. A typographic title card
-       reads as a design decision; a broken-image glyph reads as a bug — and
-       book covers will be missing often enough that this is on screen a lot. */
-    <div class="cover cover--blank" style={`--item-accent: ${accentOf(item)}`}>
-      <span class="cover__glyph" aria-hidden="true">
-        {medium.glyph}
-      </span>
-      {/* One bottom-anchored block, so a missing author or year cannot move the
-          title: the 15 imported series carry no creator and 7 books no year. */}
+{/*
+  One tile, whether or not artwork exists. Both states carry their own title in
+  the same place, so a real cover does not become the odd card out — for a long
+  time most entries will have none, and the grid has to read as finished either
+  way. A missing cover is a first-class state: a typographic title card reads as
+  a decision, a broken-image glyph reads as a bug.
+*/}
+<div
+  class="cover"
+  class:list={{ "cover--art": Boolean(cover), "cover--blank": !cover }}
+  style={`--item-accent: ${accentOf(item)}`}
+>
+  {
+    cover && (
+      <Image
+        class="cover__img"
+        src={cover}
+        alt={`Portada de ${item.data.title}`}
+        widths={[width, width * 2]}
+        sizes={`${width}px`}
+        loading={eager ? "eager" : "lazy"}
+      />
+    )
+  }
+
+  <span class="cover__glyph" aria-hidden="true">{medium.glyph}</span>
+
+  {
+    caption && (
+      /* One bottom-anchored block, so a missing author or year cannot move the
+         title: the 15 imported series carry no creator and 7 books no year. */
       <span class="cover__foot" title={item.data.title}>
         {item.data.by && <span class="cover__by mono">{item.data.by}</span>}
         <span class="cover__title">{item.data.title}</span>
-        {item.data.year && <span class="cover__year mono">{item.data.year}</span>}
+        {(item.data.year || progress) && (
+          <span class="cover__year mono">
+            {[item.data.year, progress].filter(Boolean).join(" · ")}
+          </span>
+        )}
       </span>
-    </div>
-  )
-}
+    )
+  }
+</div>
 
 <style>
   .cover {
+    position: relative;
     width: 100%;
-    height: auto;
-    aspect-ratio: var(--poster);
     /* Sources disagree on ratio — TMDB gives 2:3, IGDB nearer 3:4, book scans
        anything at all. Cropping to one shape costs ~10% of a game cover and
        buys a grid whose tiles line up. */
-    object-fit: cover;
+    aspect-ratio: var(--poster);
     border-radius: var(--radius-md);
+    overflow: hidden;
     background: var(--surface-inset);
+    /* Lets the type scale to the tile instead of overflowing narrow columns. */
+    container-type: inline-size;
+  }
+
+  .cover__img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
 
   .cover--blank {
-    /* Positioned, not flowed. `aspect-ratio` loses to content taller than the
-       ratio, which is exactly what happened: four lines of title in a 132px
-       column stretched tiles to 234px and broke the uniform grid. Absolute
-       children contribute nothing to intrinsic height, so the ratio always wins.
-       `container-type` then lets the type scale to the tile instead of
-       overflowing the small ones. */
-    display: block;
-    position: relative;
-    container-type: inline-size;
     /* The medium's accent, pulled almost all the way down to the surface: enough
        to tell the media apart at a glance, not enough to compete with real art. */
     background:
@@ -76,23 +100,51 @@ const medium = MEDIA[item.medium];
         var(--surface-inset) 78%
       );
     border: 1px solid color-mix(in oklab, var(--item-accent) 20%, var(--border));
-    overflow: hidden;
+  }
+
+  /* Artwork needs its own ground under the type. Sized to the foot block rather
+     than half the tile, so the picture stays the subject. */
+  .cover--art::after {
+    content: "";
+    position: absolute;
+    inset: 38% 0 0;
+    /* Opaque enough by 62% that the foot reads over *any* artwork, not just the
+       dark covers. A bright poster under a light scrim put the 11.5px author
+       line near 3.6:1; this keeps the worst case above 8:1. The cost is a
+       heavier veil over the bottom third, which is the trade every poster with
+       an overlaid title makes. */
+    background: linear-gradient(
+      to bottom,
+      transparent 0%,
+      rgba(6, 7, 9, 0.45) 34%,
+      rgba(6, 7, 9, 0.88) 62%,
+      rgba(6, 7, 9, 0.96) 100%
+    );
+    pointer-events: none;
   }
 
   .cover__glyph {
     position: absolute;
     top: var(--space-4);
     left: var(--space-4);
+    z-index: 1;
     color: var(--item-accent);
     font-size: var(--text-lg);
     line-height: 1;
     opacity: 0.9;
   }
 
-  /* Pushed to the bottom of the tile: everything above it is breathing room, so
-     the title sits in the same place on every card. */
+  .cover--art .cover__glyph {
+    color: #fff;
+    opacity: 0.85;
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8);
+  }
+
+  /* Anchored to the bottom of the tile: everything above is breathing room, so
+     the title sits in the same place on every card, artwork or not. */
   .cover__foot {
     position: absolute;
+    z-index: 1;
     inset: auto var(--space-4) var(--space-4);
     display: grid;
     gap: var(--space-2);
@@ -133,5 +185,16 @@ const medium = MEDIA[item.medium];
   .cover__year {
     font-size: var(--text-mono-xs);
     color: var(--fg-subtle);
+  }
+
+  /* On artwork the type sits on a scrim, so it reads from white rather than from
+     the muted tokens that were tuned for the flat tile. */
+  .cover--art .cover__by,
+  .cover--art .cover__year {
+    color: rgba(255, 255, 255, 0.82);
+  }
+
+  .cover--art .cover__title {
+    color: #fff;
   }
 </style>

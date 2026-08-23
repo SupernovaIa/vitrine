@@ -2,12 +2,14 @@
 import { render } from "astro:content";
 import Base from "../../layouts/Base.astro";
 import Cover from "../../components/Cover.astro";
+import ItemCard from "../../components/ItemCard.astro";
 import Tier from "../../components/Tier.astro";
 import {
   MEDIA,
   STATUS,
   accentOf,
   allItems,
+  siblingsOf,
   TIERS,
   metaLine,
   progressLabel,
@@ -20,11 +22,12 @@ export async function getStaticPaths() {
   const items = await allItems();
   return items.map((item) => ({
     params: { medium: item.medium, slug: item.slug },
-    props: { item },
+    /* Siblings resolved at build time: the page had exactly one outbound link. */
+    props: { item, siblings: siblingsOf(item, items) },
   }));
 }
 
-const { item } = Astro.props;
+const { item, siblings } = Astro.props;
 const { data } = item;
 const medium = MEDIA[item.medium];
 const { Content } = await render(item.render);
@@ -83,7 +86,7 @@ const facts = [
   <article class="page detail" style={`--item-accent: ${accentOf(item)}`}>
     <div class="detail__aside">
       <div class="detail__cover">
-        <Cover item={item} width={340} eager />
+        <Cover item={item} width={340} eager caption={false} />
         {
           progress != null && (
             <div class="detail__progress" role="presentation">
@@ -165,6 +168,21 @@ const facts = [
 
       <a class="back kicker" href="/">← Volver a la estantería</a>
     </div>
+
+    {
+      siblings.length > 0 && (
+        <aside class="siblings">
+          <h2 class="siblings__head">
+            {tier ? `Otros ${tier}` : `Más ${MEDIA[item.medium].label.toLowerCase()}`}
+          </h2>
+          <div class="siblings__grid">
+            {siblings.map((s) => (
+              <ItemCard item={s} width={200} />
+            ))}
+          </div>
+        </aside>
+      )
+    }
   </article>
 </Base>
 
@@ -356,6 +374,26 @@ const facts = [
     color: var(--fg-muted);
     border: 1px solid var(--border);
     border-radius: 999px;
+  }
+
+  .siblings {
+    grid-column: 1 / -1;
+    margin-top: var(--space-8);
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--border);
+  }
+
+  .siblings__head {
+    font-size: var(--text-base);
+    font-weight: 500;
+    color: var(--fg-muted);
+    margin-bottom: var(--space-5);
+  }
+
+  .siblings__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+    gap: var(--space-4);
   }
 
   .back {

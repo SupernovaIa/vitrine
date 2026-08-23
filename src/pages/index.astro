@@ -30,9 +30,12 @@ const best = canon(items);
           <h2>Tier S</h2>
           <p class="kicker">{best.length} imprescindibles</p>
         </header>
-        <div class="grid grid--now">
+        {/* A destination, not a preview: larger tiles, and room for the one
+            sentence that says why it earned an S. Deliberately unnumbered —
+            ranking inside a tier would invent an order that was never made. */}
+        <div class="grid grid--canon">
           {best.map((item, i) => (
-            <ItemCard item={item} eager={i < 6} />
+            <ItemCard item={item} width={320} eager={i < 6} claim />
           ))}
         </div>
       </section>
@@ -109,8 +112,10 @@ const best = canon(items);
     gap: var(--space-5) var(--space-4);
   }
 
-  .grid--now {
-    grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  .grid--canon {
+    grid-template-columns: repeat(auto-fill, minmax(208px, 1fr));
+    gap: var(--space-6) var(--space-5);
+    align-items: start;
   }
 
   .grid--shelf {
@@ -130,10 +135,13 @@ const best = canon(items);
   }
 
   @media (max-width: 620px) {
-    /* auto-fill drops the featured row to a single column on a phone, which
-       blows one poster up to full width. Two is the floor. */
-    .grid--now {
+    /* auto-fill drops the canon row to a single column on a phone, which blows
+       one poster up to full width. Two is the floor. */
+    .grid--canon {
       grid-template-columns: repeat(2, 1fr);
+      /* Match the shelf's gutter: a wider one made the canon tiles *narrower*
+         than the archive tiles they are supposed to lead. */
+      gap: var(--space-5) var(--space-4);
     }
   }
 </style>
