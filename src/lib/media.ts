@@ -18,11 +18,11 @@ export const MEDIA: Record<
   games: { label: "Juegos", one: "Juego", byLabel: "Estudio", glyph: "◈" },
 };
 
-export const STATUS: Record<string, { label: string; short: string; rank: number }> = {
-  done: { label: "Terminado", short: "Hecho", rank: 0 },
-  active: { label: "En curso", short: "En curso", rank: 1 },
-  pending: { label: "Pendiente", short: "Pendiente", rank: 2 },
-  dropped: { label: "Abandonado", short: "Dejado", rank: 3 },
+export const STATUS: Record<string, { label: string; rank: number }> = {
+  done: { label: "Terminado", rank: 0 },
+  active: { label: "En curso", rank: 1 },
+  pending: { label: "Pendiente", rank: 2 },
+  dropped: { label: "Abandonado", rank: 3 },
 };
 
 /**
@@ -174,20 +174,13 @@ export function progressLabel(item: Item): string | null {
   return null;
 }
 
-/**
- * The metadata line: year, author, and whatever unit the medium counts in.
- *
- * `compact` drops that last part, for the caption under a card. At 185px wide,
- * "2017 · Team Cherry · PC · Switch" wraps to two cramped lines — and the detail
- * page carries the full record anyway.
- */
-export function metaLine(item: Item, { compact = false } = {}): string {
+/** The metadata line: year, author, and whatever unit the medium counts in. */
+export function metaLine(item: Item): string {
   const d = item.data;
   const bits: (string | undefined)[] = [
     d.year ? String(d.year) : undefined,
     d.by as string | undefined,
   ];
-  if (compact) return bits.filter(Boolean).join(" · ");
   if (item.medium === "films" && d.runtime) bits.push(`${d.runtime} min`);
   if (item.medium === "series" && d.seasons)
     bits.push(`${d.seasons} ${d.seasons === 1 ? "temporada" : "temporadas"}`);

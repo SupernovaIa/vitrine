@@ -26,19 +26,18 @@ const { title, description = "Todo lo que veo, leo y juego." } = Astro.props;
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   </head>
   <body>
+    <a class="skip" href="#contenido">Saltar al contenido</a>
+
     <header class="masthead">
       <div class="page masthead__inner">
         <a class="masthead__brand" href="/">
           <span class="masthead__mark" aria-hidden="true">◍</span>
           <span>vitrine</span>
         </a>
-        <nav class="masthead__nav">
-          <a href="/">Estantería</a>
-        </nav>
       </div>
     </header>
 
-    <main>
+    <main id="contenido">
       <slot />
     </main>
 
@@ -49,6 +48,25 @@ const { title, description = "Todo lo que veo, leo y juego." } = Astro.props;
     </footer>
 
     <style>
+      /* Visible only when focused, which is the only time it is useful. Not
+         display:none — that would take it out of the tab order entirely. */
+      .skip {
+        position: absolute;
+        left: var(--space-4);
+        top: -100%;
+        z-index: 20;
+        padding: var(--space-2) var(--space-4);
+        font-size: var(--text-sm);
+        color: var(--accent-contrast);
+        background: var(--accent);
+        border-radius: var(--radius-sm);
+        transition: top var(--dur-fast) var(--ease);
+      }
+
+      .skip:focus-visible {
+        top: var(--space-2);
+      }
+
       .masthead {
         border-bottom: 1px solid var(--border);
         /* The chrome is a hairline. On a page that is mostly artwork, a heavy
@@ -63,7 +81,6 @@ const { title, description = "Todo lo que veo, leo y juego." } = Astro.props;
       .masthead__inner {
         display: flex;
         align-items: center;
-        justify-content: space-between;
         height: 56px;
       }
 
@@ -77,16 +94,6 @@ const { title, description = "Todo lo que veo, leo y juego." } = Astro.props;
 
       .masthead__mark {
         color: var(--accent);
-      }
-
-      .masthead__nav a {
-        font-size: var(--text-sm);
-        color: var(--fg-muted);
-        transition: color var(--dur-fast) var(--ease);
-      }
-
-      .masthead__nav a:hover {
-        color: var(--fg);
       }
 
       .footer {

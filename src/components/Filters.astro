@@ -19,7 +19,9 @@ const statuses = (["done", "active", "pending", "dropped"] as const).filter((s) 
 
 <div class="filters" data-filters>
   <div class="filters__row" role="group" aria-label="Filtrar por medio">
-    <button class="chip" data-facet="medium" data-value="" aria-pressed="true">Todo</button>
+    <button class="chip" data-facet="medium" data-value="" aria-pressed="true">
+      Todo <span class="chip__count mono" data-count></span>
+    </button>
     {
       mediums.map((m) => (
         <button
@@ -32,7 +34,7 @@ const statuses = (["done", "active", "pending", "dropped"] as const).filter((s) 
           <span class="chip__glyph" aria-hidden="true">
             {MEDIA[m].glyph}
           </span>
-          {MEDIA[m].label}
+          {MEDIA[m].label} <span class="chip__count mono" data-count />
         </button>
       ))
     }
@@ -40,12 +42,12 @@ const statuses = (["done", "active", "pending", "dropped"] as const).filter((s) 
 
   <div class="filters__row" role="group" aria-label="Filtrar por estado">
     <button class="chip chip--quiet" data-facet="status" data-value="" aria-pressed="true">
-      Cualquier estado
+      Cualquier estado <span class="chip__count mono" data-count></span>
     </button>
     {
       statuses.map((s) => (
         <button class="chip chip--quiet" data-facet="status" data-value={s} aria-pressed="false">
-          {STATUS[s].label}
+          {STATUS[s].label} <span class="chip__count mono" data-count />
         </button>
       ))
     }
@@ -56,39 +58,92 @@ const statuses = (["done", "active", "pending", "dropped"] as const).filter((s) 
   /* Filtering is a handful of class toggles over a few hundred nodes, so it runs
      without a framework and without a round trip. The unfiltered grid is in the
      HTML, which means it still works with JS off — the chips are the only thing
-     that stops. */
+     that stops.
+
+     Three things beyond hiding cards, all of which were missing:
+       - every chip carries the count it would yield, and disables itself at zero,
+         so 7 of the 25 combinations stop being reachable dead ends;
+       - the count is announced, because 73 items used to vanish in silence;
+       - the selection lives in the URL, so a filtered view can be shared and
+         survives the browser's back button. */
   const root = document.querySelector<HTMLElement>("[data-filters]");
   const grid = document.querySelector<HTMLElement>("[data-shelf]");
+
   if (root && grid) {
     const cards = Array.from(grid.querySelectorAll<HTMLElement>("[data-medium]"));
     const counter = document.querySelector<HTMLElement>("[data-shelf-count]");
+    const clear = document.querySelector<HTMLElement>("[data-clear-filters]");
+    const chips = Array.from(root.querySelectorAll<HTMLButtonElement>("[data-facet]"));
+
+    const PARAM = { medium: "medio", status: "estado" } as const;
     const selected: Record<string, string> = { medium: "", status: "" };
 
-    const apply = () => {
+    const matches = (card: HTMLElement, medium: string, status: string) =>
+      (!medium || card.dataset.medium === medium) &&
+      (!status || card.dataset.status === status);
+
+    const countFor = (medium: string, status: string) =>
+      cards.reduce((n, c) => n + (matches(c, medium, status) ? 1 : 0), 0);
+
+    const apply = ({ push = true } = {}) => {
       let shown = 0;
       for (const card of cards) {
-        const ok =
-          (!selected.medium || card.dataset.medium === selected.medium) &&
-          (!selected.status || card.dataset.status === selected.status);
+        const ok = matches(card, selected.medium, selected.status);
         card.classList.toggle("is-hidden", !ok);
         if (ok) shown++;
       }
       if (counter) counter.textContent = String(shown);
       grid.classList.toggle("is-empty", shown === 0);
+
+      /* Each chip is counted against the *other* facet's current selection, so
+         the numbers describe what clicking it would actually give you. */
+      for (const chip of chips) {
+        const facet = chip.dataset.facet!;
+        const value = chip.dataset.value ?? "";
+        const n =
+          facet === "medium"
+            ? countFor(value, selected.status)
+            : countFor(selected.medium, value);
+        const slot = chip.querySelector<HTMLElement>("[data-count]");
+        if (slot) slot.textContent = String(n);
+        const isSelected = selected[facet] === value;
+        chip.disabled = n === 0 && !isSelected;
+        chip.setAttribute("aria-pressed", String(isSelected));
+      }
+
+      if (push) {
+        const url = new URL(location.href);
+        for (const [facet, param] of Object.entries(PARAM)) {
+          if (selected[facet]) url.searchParams.set(param, selected[facet]);
+          else url.searchParams.delete(param);
+        }
+        history.replaceState(null, "", url);
+      }
     };
 
     root.addEventListener("click", (event) => {
       const button = (event.target as HTMLElement).closest<HTMLButtonElement>("[data-facet]");
-      if (!button) return;
-      const facet = button.dataset.facet!;
-      selected[facet] = button.dataset.value ?? "";
-      for (const peer of root.querySelectorAll<HTMLButtonElement>(`[data-facet="${facet}"]`)) {
-        peer.setAttribute("aria-pressed", String(peer === button));
-      }
+      if (!button || button.disabled) return;
+      selected[button.dataset.facet!] = button.dataset.value ?? "";
       apply();
     });
 
-    apply();
+    clear?.addEventListener("click", () => {
+      selected.medium = "";
+      selected.status = "";
+      apply();
+      root.querySelector<HTMLButtonElement>('[data-facet="medium"][data-value=""]')?.focus();
+    });
+
+    /* Restore from the URL before the first paint of the counts. */
+    const params = new URLSearchParams(location.search);
+    for (const [facet, param] of Object.entries(PARAM)) {
+      const v = params.get(param);
+      if (v && chips.some((c) => c.dataset.facet === facet && c.dataset.value === v)) {
+        selected[facet] = v;
+      }
+    }
+    apply({ push: false });
   }
 </script>
 
@@ -108,7 +163,8 @@ const statuses = (["done", "active", "pending", "dropped"] as const).filter((s) 
     display: inline-flex;
     align-items: center;
     gap: var(--space-2);
-    padding: 6px var(--space-4);
+    min-height: 44px;
+    padding: 0 var(--space-4);
     font-family: var(--font-sans);
     font-size: var(--text-sm);
     color: var(--fg-muted);
@@ -119,10 +175,11 @@ const statuses = (["done", "active", "pending", "dropped"] as const).filter((s) 
     transition:
       color var(--dur-fast) var(--ease),
       border-color var(--dur-fast) var(--ease),
-      background var(--dur-fast) var(--ease);
+      background var(--dur-fast) var(--ease),
+      opacity var(--dur-fast) var(--ease);
   }
 
-  .chip:hover {
+  .chip:hover:not(:disabled) {
     color: var(--fg);
     border-color: var(--border-strong);
   }
@@ -133,14 +190,31 @@ const statuses = (["done", "active", "pending", "dropped"] as const).filter((s) 
     background: color-mix(in oklab, var(--chip-accent, var(--accent)) 12%, var(--surface));
   }
 
+  /* A combination that yields nothing stops being clickable rather than leading
+     somewhere empty. */
+  .chip:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+
   .chip__glyph {
     color: var(--chip-accent, var(--accent));
     font-size: var(--text-xs);
   }
 
+  .chip__count {
+    font-size: var(--text-mono-xs);
+    color: var(--fg-subtle);
+  }
+
+  .chip[aria-pressed="true"] .chip__count {
+    color: var(--fg-muted);
+  }
+
   .chip--quiet {
     font-size: var(--text-xs);
-    padding: 5px var(--space-3);
+    /* Same 44px target; the visible mark is smaller, the hit area is not. */
+    padding: 0 var(--space-3);
     background: transparent;
   }
 </style>

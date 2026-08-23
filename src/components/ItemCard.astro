@@ -118,7 +118,10 @@ const tier = tierOf(item);
       transform var(--dur) var(--ease);
   }
 
-  .card--queued:hover .card__poster {
+  /* The focus twin matters as much as the hover one: without it a keyboard user
+     got a crisp accent ring around text still sitting at 0.52 opacity. */
+  .card--queued:hover .card__poster,
+  .card--queued:focus-visible .card__poster {
     opacity: 1;
     filter: none;
   }

@@ -35,7 +35,7 @@ const best = canon(items);
             ranking inside a tier would invent an order that was never made. */}
         <div class="grid grid--canon">
           {best.map((item, i) => (
-            <ItemCard item={item} width={320} eager={i < 6} claim />
+            <ItemCard item={item} width={240} eager={i < 6} claim />
           ))}
         </div>
       </section>
@@ -45,7 +45,7 @@ const best = canon(items);
   <section class="page section">
     <header class="section__head">
       <h2>La estantería</h2>
-      <p class="kicker">
+      <p class="kicker" aria-live="polite">
         <span data-shelf-count>{items.length}</span> de {items.length}
       </p>
     </header>
@@ -53,8 +53,11 @@ const best = canon(items);
     <Filters items={items} />
 
     <div class="grid grid--shelf" data-shelf>
-      {items.map((item) => <ItemCard item={item} />)}
-      <p class="grid__empty prose">Nada con esos filtros.</p>
+      {items.map((item) => <ItemCard item={item} width={180} />)}
+      <div class="grid__empty">
+        <p class="prose">Nada con esos filtros.</p>
+        <button class="grid__clear" type="button" data-clear-filters>Quitar filtros</button>
+      </div>
     </div>
   </section>
 </Base>
@@ -127,11 +130,29 @@ const best = canon(items);
   .grid__empty {
     display: none;
     grid-column: 1 / -1;
+    justify-items: start;
+    gap: var(--space-4);
     color: var(--fg-subtle);
   }
 
   .grid.is-empty .grid__empty {
-    display: block;
+    display: grid;
+  }
+
+  .grid__empty p {
+    margin: 0;
+  }
+
+  .grid__clear {
+    min-height: 44px;
+    padding: 0 var(--space-4);
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    color: var(--fg);
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    border-radius: 999px;
+    cursor: pointer;
   }
 
   @media (max-width: 620px) {

@@ -86,7 +86,7 @@ const facts = [
   <article class="page detail" style={`--item-accent: ${accentOf(item)}`}>
     <div class="detail__aside">
       <div class="detail__cover">
-        <Cover item={item} width={340} eager caption={false} />
+        <Cover item={item} width={300} eager caption={false} />
         {
           progress != null && (
             <div class="detail__progress" role="presentation">
@@ -177,7 +177,7 @@ const facts = [
           </h2>
           <div class="siblings__grid">
             {siblings.map((s) => (
-              <ItemCard item={s} width={200} />
+              <ItemCard item={s} width={160} />
             ))}
           </div>
         </aside>
@@ -194,7 +194,7 @@ const facts = [
     background:
       radial-gradient(
         120% 100% at 22% 0%,
-        color-mix(in oklab, var(--item-accent) 40%, transparent) 0%,
+        color-mix(in oklab, var(--item-accent) 55%, transparent) 0%,
         transparent 72%
       );
     /* Fades out rather than ending, so there is no seam where the wash stops. */
