@@ -21,19 +21,31 @@ const medium = MEDIA[item.medium];
 /* Folded into the year line rather than captioned below the tile, so a card in
    progress is exactly as tall as every other card. */
 const progress = progressLabel(item);
+/* On artwork this is the whole caption, so an entry with neither year nor
+   progress gets no foot at all rather than an empty scrimmed strip. */
+const foot = [item.data.year, progress].filter(Boolean).join(" · ");
 ---
 
 {/*
-  One tile, whether or not artwork exists. Both states carry their own title in
-  the same place, so a real cover does not become the odd card out — for a long
-  time most entries will have none, and the grid has to read as finished either
-  way. A missing cover is a first-class state: a typographic title card reads as
-  a decision, a broken-image glyph reads as a bug.
+  One tile, two grounds. Without artwork the tile *is* a title card, and the
+  typography carries it — a broken-image glyph reads as a bug, a set title reads
+  as a decision. With artwork the art carries it, and the caption shrinks to the
+  one thing a cover never prints: the year, and how far in we are.
+
+  The caption used to name the work in both states, on the theory that a uniform
+  tile keeps a real cover from becoming the odd card out. Twenty-one book jackets
+  proved that wrong. A film poster puts its title in a thin billing strip at the
+  very bottom, so an overlay clears it; a jacket puts the title and the author
+  across the middle, exactly where the caption sits. "Pensar rápido, pensar
+  despacio" printed DANIEL KAHNEMAN under our own DANIEL KAHNEMAN, overlapping,
+  and "Cinco ecuaciones que cambiaron el mundo" was unreadable at 150px. You
+  cannot label a thing that is already labelled.
 */}
 <div
   class="cover"
   class:list={{ "cover--art": Boolean(cover), "cover--blank": !cover }}
   style={`--item-accent: ${accentOf(item)}`}
+  title={item.data.title}
 >
   {
     cover && (
@@ -51,17 +63,13 @@ const progress = progressLabel(item);
   <span class="cover__glyph" aria-hidden="true">{medium.glyph}</span>
 
   {
-    caption && (
+    caption && (foot || !cover) && (
       /* One bottom-anchored block, so a missing author or year cannot move the
          title: the 15 imported series carry no creator and 7 books no year. */
-      <span class="cover__foot" title={item.data.title}>
-        {item.data.by && <span class="cover__by mono">{item.data.by}</span>}
-        <span class="cover__title">{item.data.title}</span>
-        {(item.data.year || progress) && (
-          <span class="cover__year mono">
-            {[item.data.year, progress].filter(Boolean).join(" · ")}
-          </span>
-        )}
+      <span class="cover__foot">
+        {!cover && item.data.by && <span class="cover__by mono">{item.data.by}</span>}
+        {!cover && <span class="cover__title">{item.data.title}</span>}
+        {foot && <span class="cover__year mono">{foot}</span>}
       </span>
     )
   }
@@ -102,22 +110,20 @@ const progress = progressLabel(item);
     border: 1px solid color-mix(in oklab, var(--item-accent) 20%, var(--border));
   }
 
-  /* Artwork needs its own ground under the type. Sized to the foot block rather
-     than half the tile, so the picture stays the subject. */
+  /* Artwork needs its own ground under the type. It now has one line to protect
+     instead of three, so the veil starts lower and covers a fifth of the tile
+     rather than a third — the picture gets that back. The bottom still has to
+     reach near-opaque: a white jacket under a light scrim put this same 11.5px
+     mono line near 3.6:1. */
   .cover--art::after {
     content: "";
     position: absolute;
-    inset: 38% 0 0;
-    /* Opaque enough by 62% that the foot reads over *any* artwork, not just the
-       dark covers. A bright poster under a light scrim put the 11.5px author
-       line near 3.6:1; this keeps the worst case above 8:1. The cost is a
-       heavier veil over the bottom third, which is the trade every poster with
-       an overlaid title makes. */
+    inset: 58% 0 0;
     background: linear-gradient(
       to bottom,
       transparent 0%,
-      var(--scrim-soft) 34%,
-      var(--scrim-strong) 62%,
+      var(--scrim-soft) 46%,
+      var(--scrim-strong) 78%,
       var(--scrim-solid) 100%
     );
     pointer-events: none;
