@@ -112,10 +112,22 @@ pasar a menudo.
 
 ## Privacidad
 
-`visibility: private` saca la entrada del sitio **en tiempo de build**: no queda
-oculta con CSS, no está en el HTML desplegado. El filtro vive en `allItems()`
-(`src/lib/media.ts`), que es la única puerta al contenido, para que una página
-nueva no pueda filtrar una entrada privada por olvidarse de comprobarlo.
+**Este repositorio es público, así que aquí no va nada que no pueda leer
+cualquiera.** Incluido el historial de git: borrar algo después no lo borra de
+los commits anteriores.
+
+`visibility: private` sigue haciendo lo que dice, pero conviene entender qué es
+exactamente: saca la entrada del sitio **en tiempo de build**, así que no está en
+el HTML desplegado ni oculta con CSS. Lo que *no* hace, con el repo público, es
+esconder el `.md` — ese se lee entrando al repo. Significa "no en la web", no "no
+público".
+
+El filtro vive en `allItems()` (`src/lib/media.ts`), que es la única puerta al
+contenido, para que una página nueva no pueda colar una entrada marcada como
+privada por olvidarse de comprobarlo.
+
+Si alguna vez quieres una entrada de verdad privada, no puede vivir en este
+repositorio.
 
 ## Estructura
 
