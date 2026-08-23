@@ -1,5 +1,7 @@
 # vitrine
 
+**https://vitrine-nine-self.vercel.app**
+
 Registro personal de películas, series, libros y videojuegos. Web pública de
 lectura, escritura solo desde el repo: no hay backend, ni base de datos, ni login.
 
@@ -84,6 +86,12 @@ escribe `cover:` y `accent:` en el frontmatter. No hace falta tocar el `.md` a
 mano; de hecho no añadas `cover:` antes de que exista la imagen, porque el
 esquema la valida en build y el build fallará.
 
+Si el color que saca no es el que domina la portada, `--accent "#5ab5c1"` lo
+fija a mano. Pasa cuando el campo es oscuro y lo vivo es minoritario: *El
+universo elegante* es negro con una nebulosa teal y naranja, y el script
+respondió con un marrón, porque los filamentos naranjas son más numerosos pero
+están a luminosidad 0.26 frente al 0.53 del núcleo teal.
+
 **Qué imagen buscar:** desde 600×900 va sobrado (el mayor tamaño en que se
 muestra es 300px en la ficha, y eso cubre pantallas 3x). El ratio da igual: se
 recorta a 2:3, que es lo que mantiene la rejilla uniforme.
@@ -93,6 +101,12 @@ saltos de layout. Todas se normalizan a 2:3.
 
 Sin portada no se rompe nada: se dibuja una tarjeta tipográfica con el título, la
 autoría y el año, y ocupa exactamente el mismo hueco que una portada real.
+
+**Sobre una portada el pie es solo el año.** No rotula el título ni la autoría,
+porque la portada ya los lleva impresos: un póster de cine los pone en una franja
+fina abajo y una superposición los libra, pero una sobrecubierta los pone en el
+centro, y *Pensar rápido, pensar despacio* imprimía DANIEL KAHNEMAN debajo de
+nuestro propio DANIEL KAHNEMAN, solapados.
 
 ### Cómo se elige el `accent`
 
@@ -105,10 +119,6 @@ demasiado oscuros, claros o grises para tener tono fiable, y quedarse con el
 grupo de tono que más peso cromático acumula. En Hollow Knight da `#1d78b9`, que
 es el cian que cualquiera nombraría al mirar la portada. Si la imagen es
 monocroma de verdad, no escribe `accent` y la entrada usa el color de su medio.
-
-Sin portada no se rompe nada: se dibuja una tarjeta tipográfica con el título,
-la autoría y el año. Es un estado previsto, no un error — con los libros va a
-pasar a menudo.
 
 ## Privacidad
 
@@ -141,9 +151,16 @@ src/
     index.astro         estantería + "ahora mismo" + filtros
     [medium]/[slug].astro
   styles/               base.css (escala) + theme.css (color y tipografía)
-scripts/add-cover.mjs   coloca una portada y le extrae el color de acento
-scripts/import-notion.mjs  regenera las entradas desde el export de Notion
-scripts/shot.mjs        capturas a un viewport real, sobre CDP
+scripts/
+  add-cover.mjs         coloca una portada y le extrae el color de acento
+  fetch-book-covers.mjs  sobrecubiertas desde Open Library (solo libros)
+  cover-overrides.json   portadas elegidas a mano, cuando el escaneo no vale
+  lookup-metadata.mjs    datos de la obra desde Wikidata; no escribe nada
+  lookup-books.mjs       lo mismo desde Open Library
+  apply-metadata.mjs     aplica un resultado ya revisado, sin sobreescribir
+  title-overrides.json   el identificador cuando el título no basta (o un QID)
+  import-notion.mjs      regenera las entradas desde el export de Notion
+  shot.mjs               capturas a un viewport real, sobre CDP
 ```
 
 Los tokens siguen el mismo contrato semántico que `cheatsheets`: un hex fuera de
@@ -151,12 +168,20 @@ Los tokens siguen el mismo contrato semántico que `cheatsheets`: un hex fuera d
 
 ## Pendiente
 
-- **Portadas.** 1 de 73 (Hollow Knight). El resto se dibuja como tarjeta
-  tipográfica. Lo que más rinde es empezar por los 10 de Tier S, que salen
-  grandes en la portada.
+- **Portadas.** 32 de 73: libros 21/24, series 5/15, películas 3/26, juegos 3/8.
+  Los diez de Tier S ya están. Los libros los resuelve `fetch-book-covers.mjs`
+  contra Open Library; para cine, series y juegos **no hay fuente sin clave**, y
+  merece la pena saber por qué antes de volver a intentarlo: `pageimages` de
+  Wikipedia se salta los ficheros *non-free* y todos los pósters lo son (pedir
+  Interstellar o Titanic devuelve nada; Breaking Bad devuelve su logotipo
+  apaisado), la cuota anónima de Google Books está agotada, e iTunes ya no
+  responde a `media=movie`. Con una clave de TMDB se cerrarían las 38 de cine y
+  series de una tirada.
 - **Fechas.** Notion no guardaba ninguna, así que la estantería se ordena por
   estado y tier. Con `finished` relleno se puede ordenar cronológicamente y sacar
   estadísticas por año (`shelfOrder` en `src/lib/media.ts`).
 - **Reseñas.** El cuerpo de las 73 entradas está vacío.
-- Ingesta desde APIs (TMDB / IGDB / Open Library) si meter las cosas a mano cansa.
-- Extraer `accent` de la portada en el build en vez de a mano.
+- **`episodes` no se pinta en ningún sitio.** Están rellenos 14 de 15, y ni
+  `metaLine` ni la tabla de datos los muestran: la ficha de una serie enseña
+  temporadas y se queda ahí. O se pinta el campo, o ese relleno no sirve.
+- Ingesta desde APIs (TMDB / IGDB) si meter las cosas a mano cansa.
