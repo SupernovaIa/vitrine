@@ -1,0 +1,133 @@
+---
+import { Image } from "astro:assets";
+import { MEDIA, accentOf, type Item } from "../lib/media";
+
+interface Props {
+  item: Item;
+  /** Rendered width in CSS pixels, so Astro emits the right candidates. */
+  width?: number;
+  eager?: boolean;
+}
+
+const { item, width = 240, eager = false } = Astro.props;
+const cover = item.data.cover;
+const medium = MEDIA[item.medium];
+---
+
+{
+  cover ? (
+    <Image
+      class="cover"
+      src={cover}
+      alt={`Portada de ${item.data.title}`}
+      widths={[width, width * 2]}
+      sizes={`${width}px`}
+      loading={eager ? "eager" : "lazy"}
+      style={`--item-accent: ${accentOf(item)}`}
+    />
+  ) : (
+    /* No cover is a first-class state, not a failure. A typographic title card
+       reads as a design decision; a broken-image glyph reads as a bug — and
+       book covers will be missing often enough that this is on screen a lot. */
+    <div class="cover cover--blank" style={`--item-accent: ${accentOf(item)}`}>
+      <span class="cover__glyph" aria-hidden="true">
+        {medium.glyph}
+      </span>
+      {/* One bottom-anchored block, so a missing author or year cannot move the
+          title: the 15 imported series carry no creator and 7 books no year. */}
+      <span class="cover__foot" title={item.data.title}>
+        {item.data.by && <span class="cover__by mono">{item.data.by}</span>}
+        <span class="cover__title">{item.data.title}</span>
+        {item.data.year && <span class="cover__year mono">{item.data.year}</span>}
+      </span>
+    </div>
+  )
+}
+
+<style>
+  .cover {
+    width: 100%;
+    aspect-ratio: var(--poster);
+    /* Sources disagree on ratio — TMDB gives 2:3, IGDB nearer 3:4, book scans
+       anything at all. Cropping to one shape costs ~10% of a game cover and
+       buys a grid whose tiles line up. */
+    object-fit: cover;
+    border-radius: var(--radius-md);
+    background: var(--surface-inset);
+  }
+
+  .cover--blank {
+    /* Positioned, not flowed. `aspect-ratio` loses to content taller than the
+       ratio, which is exactly what happened: four lines of title in a 132px
+       column stretched tiles to 234px and broke the uniform grid. Absolute
+       children contribute nothing to intrinsic height, so the ratio always wins.
+       `container-type` then lets the type scale to the tile instead of
+       overflowing the small ones. */
+    display: block;
+    position: relative;
+    container-type: inline-size;
+    /* The medium's accent, pulled almost all the way down to the surface: enough
+       to tell the media apart at a glance, not enough to compete with real art. */
+    background:
+      linear-gradient(
+        168deg,
+        color-mix(in oklab, var(--item-accent) 22%, var(--surface)) 0%,
+        var(--surface-inset) 78%
+      );
+    border: 1px solid color-mix(in oklab, var(--item-accent) 20%, var(--border));
+    overflow: hidden;
+  }
+
+  .cover__glyph {
+    position: absolute;
+    top: var(--space-4);
+    left: var(--space-4);
+    color: var(--item-accent);
+    font-size: var(--text-lg);
+    line-height: 1;
+    opacity: 0.9;
+  }
+
+  /* Pushed to the bottom of the tile: everything above it is breathing room, so
+     the title sits in the same place on every card. */
+  .cover__foot {
+    position: absolute;
+    inset: auto var(--space-4) var(--space-4);
+    display: grid;
+    gap: var(--space-2);
+    min-width: 0;
+  }
+
+  .cover__by {
+    font-size: clamp(8.5px, 5.5cqw, var(--text-mono-xs));
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--fg-subtle);
+    /* Two lines of a long studio name, then ellipsis. */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .cover__title {
+    font-family: var(--font-serif);
+    /* Scaled to the tile and given five lines, because on a blank cover the
+       title is the artwork: "Cómo hacer amigos e influir en las personas" has
+       to land, not ellipsise. */
+    font-size: clamp(11.5px, 11.5cqw, 22px);
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    color: var(--fg);
+    text-wrap: balance;
+    display: -webkit-box;
+    -webkit-line-clamp: 5;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .cover__year {
+    font-size: clamp(8.5px, 5.5cqw, var(--text-mono-xs));
+    color: var(--fg-subtle);
+  }
+</style>

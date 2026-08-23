@@ -1,0 +1,47 @@
+/* Vitrine — a near-black case built so the covers are the only saturated thing
+   in the room. Every surface sits within a few points of the background; the
+   chrome is meant to disappear when a wall of posters is on screen. */
+:root {
+  --bg: #0a0b0e;
+  --surface: #12141a;
+  --surface-inset: #0d0f13;
+  --border: #1e212a;
+  --border-strong: #333845;
+
+  --fg: #eceef3;
+  --fg-muted: #9ba1b0;
+  --fg-subtle: #767d8d;
+
+  --accent: #e8c97a;
+  --accent-soft: rgba(232, 201, 122, 0.12);
+  --accent-contrast: #0a0b0e;
+
+  /* One accent per medium, reused from the cheatsheets role palette so both
+     projects speak the same colour language. These are marks, not type colours:
+     never set 10px text in one. */
+  --medium-films: #5b8ef0;
+  --medium-series: #b57bff;
+  --medium-books: #e0964e;
+  --medium-games: #3fb3a0;
+
+  /* The tier scale, in the colours the Notion database already used, so the
+     scale looks like the one it replaces. Marks and badge backgrounds only —
+     never small type. */
+  --tier-s: #b57bff;
+  --tier-a: #5b8ef0;
+  --tier-b: #3fb3a0;
+  --tier-c: #e0964e;
+  --tier-d: #e06a8b;
+
+  --font-sans: "Poppins", system-ui, sans-serif;
+  --font-display: "Poppins", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, monospace;
+  --font-serif: "Newsreader Variable", Georgia, serif;
+
+  --weight-display: 600;
+
+  /* Posters carry their own shadow: a tight contact shadow plus a wide soft one
+     is what makes a flat image read as an object sitting on a surface. */
+  --shadow-poster: 0 1px 2px rgba(0, 0, 0, 0.6), 0 18px 36px -18px rgba(0, 0, 0, 0.8);
+  --shadow-lift: 0 2px 4px rgba(0, 0, 0, 0.5), 0 32px 60px -22px rgba(0, 0, 0, 0.9);
+}

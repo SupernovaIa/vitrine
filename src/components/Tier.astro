@@ -1,0 +1,66 @@
+---
+import { TIERS, type Tier } from "../lib/media";
+
+interface Props {
+  tier?: Tier;
+  /** `true` renders the "por decidir" state: finished, not yet judged. */
+  undecided?: boolean;
+  size?: "sm" | "lg";
+}
+
+const { tier, undecided = false, size = "sm" } = Astro.props;
+---
+
+{
+  tier ? (
+    <span
+      class:list={["tier", `tier--${size}`]}
+      style={`--tier-color: var(--tier-${tier.toLowerCase()})`}
+      title={TIERS[tier].label}
+    >
+      {tier}
+    </span>
+  ) : undecided ? (
+    <span class:list={["tier", "tier--none", `tier--${size}`]}>?</span>
+  ) : null
+}
+
+<style>
+  /* A single glyph in a filled square. The letter is the whole scale, so it gets
+     the colour and nothing else on the card competes with it. */
+  .tier {
+    display: inline-grid;
+    place-items: center;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    line-height: 1;
+    color: var(--accent-contrast);
+    background: var(--tier-color);
+    border-radius: var(--radius-sm);
+  }
+
+  .tier--sm {
+    width: 20px;
+    height: 20px;
+    font-size: var(--text-xs);
+    /* Sits on artwork, so it needs its own separation from whatever is behind. */
+    box-shadow:
+      0 0 0 1px rgba(0, 0, 0, 0.45),
+      0 2px 8px rgba(0, 0, 0, 0.55);
+  }
+
+  .tier--lg {
+    width: 34px;
+    height: 34px;
+    font-size: var(--text-lg);
+    border-radius: var(--radius-md);
+  }
+
+  /* Finished but unrated: the shape of a tier with none of its colour. */
+  .tier--none {
+    color: var(--fg-subtle);
+    background: transparent;
+    box-shadow: none;
+    border: 1px dashed var(--border-strong);
+  }
+</style>

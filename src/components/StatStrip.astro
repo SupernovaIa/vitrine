@@ -1,0 +1,78 @@
+---
+import { MEDIA, type Stats } from "../lib/media";
+
+interface Props {
+  stats: Stats;
+}
+
+const { stats } = Astro.props;
+---
+
+<dl class="stats">
+  {
+    stats.byMedium.map((row) => (
+      <div class="stats__cell" style={`--cell-accent: var(--medium-${row.medium})`}>
+        <dt class="kicker">{MEDIA[row.medium].label}</dt>
+        <dd class="mono">
+          {row.done}
+          {row.total > row.done && <span class="stats__of">de {row.total}</span>}
+        </dd>
+      </div>
+    ))
+  }
+  {
+    /* A tier list has no mean. What it has is a top shelf, so that is the
+       number: how many things earned an S. */
+    stats.canon > 0 && (
+      <div class="stats__cell stats__cell--canon">
+        <dt class="kicker">Tier S</dt>
+        <dd class="mono">{stats.canon}</dd>
+      </div>
+    )
+  }
+</dl>
+
+<style>
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+    gap: 1px;
+    margin: 0;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+
+  .stats__cell {
+    padding: var(--space-4) var(--space-4) var(--space-3);
+    background: var(--surface);
+    /* The accent lands on a 2px rule, never on the numeral: a coloured figure at
+       this size fails contrast for no gain in meaning. */
+    border-top: 2px solid var(--cell-accent, var(--border-strong));
+  }
+
+  .stats__cell--canon {
+    --cell-accent: var(--tier-s);
+  }
+
+  .stats__cell dt {
+    margin-bottom: var(--space-2);
+  }
+
+  .stats__cell dd {
+    margin: 0;
+    font-size: var(--text-xl);
+    font-weight: 500;
+    line-height: 1;
+    color: var(--fg);
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-1);
+  }
+
+  .stats__of {
+    font-size: var(--text-sm);
+    color: var(--fg-subtle);
+  }
+</style>

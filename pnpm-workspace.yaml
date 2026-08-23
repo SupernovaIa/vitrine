@@ -1,0 +1,5 @@
+# pnpm blocks dependency build scripts until they are explicitly allowed.
+# sharp is what optimises the covers; esbuild is Astro's bundler.
+allowBuilds:
+  esbuild: true
+  sharp: true

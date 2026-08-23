@@ -1,0 +1,102 @@
+---
+import "@fontsource/poppins/400.css";
+import "@fontsource/poppins/500.css";
+import "@fontsource/poppins/600.css";
+import "@fontsource-variable/jetbrains-mono";
+import "@fontsource-variable/newsreader";
+import "../styles/base.css";
+import "../styles/theme.css";
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = "Todo lo que veo, leo y juego." } = Astro.props;
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="color-scheme" content="dark" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  </head>
+  <body>
+    <header class="masthead">
+      <div class="page masthead__inner">
+        <a class="masthead__brand" href="/">
+          <span class="masthead__mark" aria-hidden="true">◍</span>
+          <span>shelf</span>
+        </a>
+        <nav class="masthead__nav kicker">
+          <a href="/">Estantería</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <slot />
+    </main>
+
+    <footer class="footer">
+      <div class="page">
+        <p class="kicker">Registro personal · sin API, entradas a mano</p>
+      </div>
+    </footer>
+
+    <style>
+      .masthead {
+        border-bottom: 1px solid var(--border);
+        /* The chrome is a hairline. On a page that is mostly artwork, a heavy
+           header is the first thing that makes it look like a CMS. */
+        background: color-mix(in oklab, var(--bg) 88%, transparent);
+        backdrop-filter: blur(10px);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+      }
+
+      .masthead__inner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 56px;
+      }
+
+      .masthead__brand {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        font-weight: 600;
+        letter-spacing: var(--tracking-tight);
+      }
+
+      .masthead__mark {
+        color: var(--accent);
+      }
+
+      .masthead__nav a {
+        color: var(--fg-subtle);
+        transition: color var(--dur-fast) var(--ease);
+      }
+
+      .masthead__nav a:hover {
+        color: var(--fg);
+      }
+
+      .footer {
+        margin-top: var(--space-8);
+        padding: var(--space-6) 0 var(--space-7);
+        border-top: 1px solid var(--border);
+      }
+
+      .footer p {
+        margin: 0;
+      }
+    </style>
+  </body>
+</html>

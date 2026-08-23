@@ -1,0 +1,140 @@
+---
+import Base from "../layouts/Base.astro";
+import ItemCard from "../components/ItemCard.astro";
+import Filters from "../components/Filters.astro";
+import StatStrip from "../components/StatStrip.astro";
+import { allItems, canon, statsOf } from "../lib/media";
+
+const items = await allItems();
+const stats = statsOf(items);
+/* The featured row is tier S, not "in progress": with real data only one thing
+   is ever mid-flight, and a one-card hero row reads as a bug. The S list is the
+   most interesting thing a personal tracker holds anyway. */
+const best = canon(items);
+---
+
+<Base title="shelf — todo lo que veo, leo y juego">
+  <section class="page hero">
+    <p class="kicker">Registro personal</p>
+    <h1>Todo lo que veo,<br />leo y juego.</h1>
+    <p class="hero__lead prose">
+      Un solo sitio para las cuatro cosas, porque la gracia está en verlas juntas:
+      qué terminé, qué me marcó y qué llevo años posponiendo.
+    </p>
+    <StatStrip stats={stats} />
+  </section>
+
+  {
+    best.length > 0 && (
+      <section class="page section">
+        <header class="section__head">
+          <h2>Tier S</h2>
+          <p class="kicker">{best.length} imprescindibles</p>
+        </header>
+        <div class="grid grid--now">
+          {best.map((item, i) => (
+            <ItemCard item={item} eager={i < 6} />
+          ))}
+        </div>
+      </section>
+    )
+  }
+
+  <section class="page section">
+    <header class="section__head">
+      <h2>La estantería</h2>
+      <p class="kicker">
+        <span data-shelf-count>{items.length}</span> de {items.length}
+      </p>
+    </header>
+
+    <Filters items={items} />
+
+    <div class="grid grid--shelf" data-shelf>
+      {items.map((item) => <ItemCard item={item} />)}
+      <p class="grid__empty prose">Nada con esos filtros.</p>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .hero {
+    padding: var(--space-8) 0 var(--space-7);
+    display: grid;
+    gap: var(--space-5);
+    justify-items: start;
+  }
+
+  .hero h1 {
+    font-size: var(--text-display);
+    max-width: 18ch;
+  }
+
+  .hero__lead {
+    margin: 0;
+    max-width: 52ch;
+  }
+
+  .hero :global(.stats) {
+    width: 100%;
+    margin-top: var(--space-3);
+  }
+
+  .section {
+    margin-top: var(--space-8);
+    display: grid;
+    gap: var(--space-5);
+  }
+
+  .section__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-4);
+    padding-bottom: var(--space-3);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section__head h2 {
+    font-size: var(--text-lg);
+  }
+
+  .section__head p {
+    margin: 0;
+  }
+
+  .grid {
+    display: grid;
+    /* auto-fill with a min keeps the poster width honest at every viewport
+       instead of squeezing a fixed column count down to postage stamps. */
+    gap: var(--space-5) var(--space-4);
+  }
+
+  .grid--now {
+    grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  }
+
+  .grid--shelf {
+    /* 132px was too tight once the covers had to carry their own titles: long
+       book names had nowhere to wrap. */
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  }
+
+  .grid__empty {
+    display: none;
+    grid-column: 1 / -1;
+    color: var(--fg-subtle);
+  }
+
+  .grid.is-empty .grid__empty {
+    display: block;
+  }
+
+  @media (max-width: 620px) {
+    /* auto-fill drops the featured row to a single column on a phone, which
+       blows one poster up to full width. Two is the floor. */
+    .grid--now {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+</style>

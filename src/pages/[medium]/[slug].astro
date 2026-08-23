@@ -1,0 +1,379 @@
+---
+import { render } from "astro:content";
+import Base from "../../layouts/Base.astro";
+import Cover from "../../components/Cover.astro";
+import Tier from "../../components/Tier.astro";
+import {
+  MEDIA,
+  STATUS,
+  accentOf,
+  allItems,
+  TIERS,
+  metaLine,
+  progressLabel,
+  progressOf,
+  tierOf,
+  undecided,
+} from "../../lib/media";
+
+export async function getStaticPaths() {
+  const items = await allItems();
+  return items.map((item) => ({
+    params: { medium: item.medium, slug: item.slug },
+    props: { item },
+  }));
+}
+
+const { item } = Astro.props;
+const { data } = item;
+const medium = MEDIA[item.medium];
+const { Content } = await render(item.render);
+
+const progress = progressOf(item);
+const tier = tierOf(item);
+/* 73 imported entries have no review yet, so an empty body is the common case. */
+const hasReview = item.body.trim().length > 0;
+const fmt = (d?: Date) =>
+  d
+    ? new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "short", year: "numeric" }).format(d)
+    : undefined;
+
+const COMPLETION: Record<string, string> = {
+  story: "Historia principal",
+  "story+extras": "Historia + secundarias",
+  full: "Al 100%",
+};
+
+/**
+ * The record, minus anything the meta line under the title already says. Year,
+ * author and the medium's own unit live up there; repeating them here read as a
+ * duplication bug, which is what it was.
+ *
+ * Empty rows are dropped, and a table of fewer than two rows is not a table —
+ * the imported entries have almost nothing yet, and one lonely row in a bordered
+ * grid looks broken rather than sparse.
+ */
+const facts = [
+  { label: "Empezado", value: fmt(data.started as Date | undefined) },
+  { label: "Terminado", value: fmt(data.finished as Date | undefined) },
+  { label: "Progreso", value: progressLabel(item) ?? undefined },
+  { label: "Género", value: data.genre as string | undefined },
+  {
+    label: "En físico",
+    value: item.medium === "books" ? (data.physical ? "Sí" : "No") : undefined,
+  },
+  { label: "Horas", value: data.hours != null ? `${data.hours} h` : undefined },
+  {
+    label: "Completado",
+    value: data.completion ? COMPLETION[data.completion as string] : undefined,
+  },
+  {
+    label: "Revisitas",
+    value: (data.revisits as number) > 0 ? String(data.revisits) : undefined,
+  },
+].filter((f): f is { label: string; value: string } => Boolean(f.value));
+---
+
+<Base title={`${data.title} — shelf`} description={(data.hook as string) ?? undefined}>
+  {/* The cover's dominant colour, bled behind the header. It is the cheapest way
+      to make every page feel like it belongs to its own thing rather than to a
+      template — and it is the whole reason `accent` is in the schema. */}
+  <div class="wash" style={`--item-accent: ${accentOf(item)}`} aria-hidden="true"></div>
+
+  <article class="page detail" style={`--item-accent: ${accentOf(item)}`}>
+    <div class="detail__aside">
+      <div class="detail__cover">
+        <Cover item={item} width={340} eager />
+        {
+          progress != null && (
+            <div class="detail__progress" role="presentation">
+              <span style={`width: ${progress * 100}%`} />
+            </div>
+          )
+        }
+      </div>
+    </div>
+
+    <div class="detail__main">
+      <p class="kicker detail__kicker">
+        <span class="detail__glyph" aria-hidden="true">{medium.glyph}</span>
+        {medium.one}
+        <span class="detail__status">· {STATUS[data.status]?.label}</span>
+      </p>
+
+      <h1>{data.title}</h1>
+      {data.sub && <p class="detail__sub mono">{data.sub}</p>}
+      <p class="detail__meta mono">{metaLine(item)}</p>
+
+      {
+        (tier || undecided(item)) && (
+          <div class="verdict">
+            <Tier tier={tier} undecided={undecided(item)} size="lg" />
+            <span class="verdict__label">
+              {tier ? TIERS[tier].label : "Por decidir"}
+            </span>
+          </div>
+        )
+      }
+
+      {data.hook && <p class="detail__hook">{data.hook}</p>}
+
+      {
+        hasReview && (
+          <div class="prose detail__body">
+            <Content />
+          </div>
+        )
+      }
+
+      {
+        (data.quotes as string[]).length > 0 && (
+          <ul class="quotes">
+            {(data.quotes as string[]).map((q) => (
+              <li class="quotes__item">{q}</li>
+            ))}
+          </ul>
+        )
+      }
+
+      {
+        facts.length > 1 && (
+          <dl class="facts">
+            {facts.map((f) => (
+              <div class="facts__row">
+                <dt class="kicker">{f.label}</dt>
+                <dd class="mono">{f.value}</dd>
+              </div>
+            ))}
+          </dl>
+        )
+      }
+
+      {
+        (data.tags as string[]).length > 0 && (
+          <ul class="tags">
+            {(data.tags as string[]).map((t) => (
+              <li class="tags__item mono">{t}</li>
+            ))}
+          </ul>
+        )
+      }
+
+      <a class="back kicker" href="/">← Volver a la estantería</a>
+    </div>
+  </article>
+</Base>
+
+<style>
+  .wash {
+    position: absolute;
+    inset: 0 0 auto;
+    height: 520px;
+    background:
+      radial-gradient(
+        120% 100% at 22% 0%,
+        color-mix(in oklab, var(--item-accent) 40%, transparent) 0%,
+        transparent 72%
+      );
+    /* Fades out rather than ending, so there is no seam where the wash stops. */
+    mask-image: linear-gradient(to bottom, #000 0%, transparent 100%);
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  .detail {
+    position: relative;
+    padding: var(--space-7) 0 0;
+    display: grid;
+    grid-template-columns: minmax(220px, 300px) minmax(0, 1fr);
+    gap: var(--space-7);
+    align-items: start;
+  }
+
+  .detail__aside {
+    position: sticky;
+    top: calc(56px + var(--space-5));
+  }
+
+  .detail__cover {
+    position: relative;
+    border-radius: var(--radius-lg);
+    box-shadow:
+      var(--shadow-lift),
+      0 0 0 1px color-mix(in oklab, var(--item-accent) 30%, transparent);
+  }
+
+  .detail__cover :global(.cover) {
+    border-radius: var(--radius-lg);
+  }
+
+  .detail__progress {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.16);
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    overflow: hidden;
+  }
+
+  .detail__progress span {
+    display: block;
+    height: 100%;
+    background: var(--item-accent);
+  }
+
+  .detail__main {
+    display: grid;
+    gap: var(--space-4);
+    justify-items: start;
+  }
+
+  .detail__kicker {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin: 0;
+  }
+
+  .detail__glyph {
+    color: var(--item-accent);
+    font-size: var(--text-sm);
+  }
+
+  .detail__status {
+    color: var(--fg-subtle);
+  }
+
+  .detail__main h1 {
+    font-size: var(--text-display);
+    max-width: 24ch;
+    text-wrap: balance;
+  }
+
+  .detail__sub,
+  .detail__meta {
+    margin: 0;
+    font-size: var(--text-xs);
+    color: var(--fg-subtle);
+  }
+
+  .detail__sub {
+    color: var(--fg-muted);
+  }
+
+  .verdict {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin-top: var(--space-2);
+  }
+
+  /* The tier letter carries the judgement; the word next to it only spells out
+     what the letter means, so it stays quiet. */
+  .verdict__label {
+    font-size: var(--text-sm);
+    color: var(--fg-muted);
+  }
+
+  .detail__hook {
+    margin: var(--space-2) 0 0;
+    font-family: var(--font-serif);
+    font-size: 20px;
+    line-height: 1.45;
+    color: var(--fg);
+    max-width: 40ch;
+    text-wrap: pretty;
+  }
+
+  .detail__body {
+    margin-top: var(--space-2);
+  }
+
+  .quotes {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--space-4);
+    max-width: min(var(--measure), 100%);
+  }
+
+  .quotes__item {
+    padding-left: var(--space-5);
+    border-left: 2px solid var(--item-accent);
+    font-family: var(--font-serif);
+    font-size: 17px;
+    line-height: var(--leading-prose);
+    color: var(--fg-muted);
+  }
+
+  .facts {
+    margin: var(--space-4) 0 0;
+    width: 100%;
+    max-width: 520px;
+    display: grid;
+    gap: 0;
+    border-top: 1px solid var(--border);
+  }
+
+  .facts__row {
+    display: grid;
+    grid-template-columns: 130px 1fr;
+    gap: var(--space-4);
+    align-items: baseline;
+    padding: var(--space-3) 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .facts__row dt {
+    margin: 0;
+  }
+
+  .facts__row dd {
+    margin: 0;
+    font-size: var(--text-xs);
+    color: var(--fg);
+  }
+
+  .tags {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin: var(--space-2) 0 0;
+    padding: 0;
+  }
+
+  .tags__item {
+    font-size: var(--text-mono-xs);
+    padding: 4px var(--space-3);
+    color: var(--fg-muted);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+  }
+
+  .back {
+    margin-top: var(--space-5);
+    color: var(--fg-subtle);
+    transition: color var(--dur-fast) var(--ease);
+  }
+
+  .back:hover {
+    color: var(--fg);
+  }
+
+  @media (max-width: 720px) {
+    .detail {
+      grid-template-columns: 1fr;
+      gap: var(--space-5);
+      padding-top: var(--space-5);
+    }
+
+    .detail__aside {
+      position: static;
+      max-width: 200px;
+    }
+  }
+</style>

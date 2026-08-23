@@ -1,0 +1,197 @@
+---
+import Cover from "./Cover.astro";
+import Tier from "./Tier.astro";
+import {
+  MEDIA,
+  STATUS,
+  accentOf,
+  metaLine,
+  progressLabel,
+  progressOf,
+  tierOf,
+  undecided,
+  type Item,
+} from "../lib/media";
+
+interface Props {
+  item: Item;
+  eager?: boolean;
+}
+
+const { item, eager = false } = Astro.props;
+const { data } = item;
+const progress = progressOf(item);
+const label = progressLabel(item);
+const queued = data.status === "pending";
+const tier = tierOf(item);
+/* A blank cover *is* a title card, so repeating the title underneath it reads
+   as a duplication bug. Only real artwork needs a caption. */
+const titled = Boolean(data.cover);
+/* A blank cover already carries author and year, so the only caption worth
+   adding under one is progress — the thing artwork can never show. */
+const caption = titled || Boolean(label);
+---
+
+<a
+  class="card"
+  class:list={{ "card--queued": queued }}
+  href={item.url}
+  data-medium={item.medium}
+  data-status={data.status}
+  style={`--item-accent: ${accentOf(item)}`}
+>
+  <div class="card__poster">
+    <Cover item={item} width={240} eager={eager} />
+
+    {
+      (tier || undecided(item)) && (
+        <span class="card__tier">
+          <Tier tier={tier} undecided={undecided(item)} />
+        </span>
+      )
+    }
+
+    {queued && <span class="card__pill kicker">{STATUS.pending.short}</span>}
+
+    {
+      /* Progress reads as a bar on the poster edge rather than a number in the
+         metadata: it is the one thing you scan a shelf for. */
+      progress != null && (
+        <span class="card__progress" role="presentation">
+          <span class="card__progress-fill" style={`width: ${progress * 100}%`} />
+        </span>
+      )
+    }
+  </div>
+
+  {
+    caption && (
+      <div class="card__body">
+        {titled && <h3 class="card__title">{data.title}</h3>}
+        <p class="card__meta mono">
+          {label ? label : metaLine(item)}
+          {label && <span class="card__sep">·</span>}
+          {label && <span class="card__dim">{MEDIA[item.medium].one}</span>}
+        </p>
+      </div>
+    )
+  }
+</a>
+
+<style>
+  .card {
+    display: grid;
+    gap: var(--space-3);
+    align-content: start;
+  }
+
+  .card__poster {
+    position: relative;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-poster);
+    transition:
+      transform var(--dur) var(--ease),
+      box-shadow var(--dur) var(--ease);
+  }
+
+  /* Lift plus a glow in the item's own colour. The ring is drawn as an inset
+     shadow on a wrapper so it never nudges layout on hover. */
+  .card:hover .card__poster,
+  .card:focus-visible .card__poster {
+    transform: translateY(-4px);
+    box-shadow:
+      var(--shadow-lift),
+      0 0 0 1px color-mix(in oklab, var(--item-accent) 55%, transparent),
+      0 14px 44px -10px color-mix(in oklab, var(--item-accent) 40%, transparent);
+  }
+
+  .card:focus-visible {
+    outline: none;
+  }
+
+  .card:focus-visible .card__poster {
+    outline: 2px solid var(--item-accent);
+    outline-offset: 3px;
+  }
+
+  /* Queued things are dimmed so the shelf splits into "lived" and "waiting"
+     without needing a second grid or a label on every tile. */
+  .card--queued .card__poster {
+    opacity: 0.52;
+    filter: saturate(0.7);
+    transition:
+      opacity var(--dur) var(--ease),
+      filter var(--dur) var(--ease),
+      transform var(--dur) var(--ease);
+  }
+
+  .card--queued:hover .card__poster {
+    opacity: 1;
+    filter: none;
+  }
+
+  .card__tier {
+    position: absolute;
+    top: var(--space-2);
+    right: var(--space-2);
+    line-height: 0;
+  }
+
+  .card__pill {
+    position: absolute;
+    bottom: var(--space-2);
+    left: var(--space-2);
+    padding: 3px var(--space-2);
+    color: var(--fg-muted);
+    background: rgba(10, 11, 14, 0.72);
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-sm);
+  }
+
+  .card__progress {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.14);
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+    overflow: hidden;
+  }
+
+  .card__progress-fill {
+    display: block;
+    height: 100%;
+    background: var(--item-accent);
+  }
+
+  .card__body {
+    display: grid;
+    gap: 3px;
+  }
+
+  .card__title {
+    font-size: var(--text-sm);
+    font-weight: 500;
+    letter-spacing: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .card__meta {
+    margin: 0;
+    font-size: var(--text-mono-xs);
+    color: var(--fg-subtle);
+    display: flex;
+    gap: var(--space-1);
+    align-items: baseline;
+  }
+
+  .card__sep,
+  .card__dim {
+    color: var(--border-strong);
+  }
+</style>

@@ -1,0 +1,146 @@
+---
+import { MEDIA, STATUS, type Item } from "../lib/media";
+
+interface Props {
+  items: Item[];
+}
+
+const { items } = Astro.props;
+
+const mediums = (["films", "series", "books", "games"] as const).filter((m) =>
+  items.some((i) => i.medium === m),
+);
+/* Order mirrors the shelf's own sort: finished, in flight, waiting, abandoned.
+   Only states that actually occur get a chip. */
+const statuses = (["done", "active", "pending", "dropped"] as const).filter((s) =>
+  items.some((i) => i.data.status === s),
+);
+---
+
+<div class="filters" data-filters>
+  <div class="filters__row" role="group" aria-label="Filtrar por medio">
+    <button class="chip" data-facet="medium" data-value="" aria-pressed="true">Todo</button>
+    {
+      mediums.map((m) => (
+        <button
+          class="chip"
+          data-facet="medium"
+          data-value={m}
+          aria-pressed="false"
+          style={`--chip-accent: var(--medium-${m})`}
+        >
+          <span class="chip__glyph" aria-hidden="true">
+            {MEDIA[m].glyph}
+          </span>
+          {MEDIA[m].label}
+        </button>
+      ))
+    }
+  </div>
+
+  <div class="filters__row" role="group" aria-label="Filtrar por estado">
+    <button class="chip chip--quiet" data-facet="status" data-value="" aria-pressed="true">
+      Cualquier estado
+    </button>
+    {
+      statuses.map((s) => (
+        <button class="chip chip--quiet" data-facet="status" data-value={s} aria-pressed="false">
+          {STATUS[s].label}
+        </button>
+      ))
+    }
+  </div>
+</div>
+
+<script>
+  /* Filtering is a handful of class toggles over a few hundred nodes, so it runs
+     without a framework and without a round trip. The unfiltered grid is in the
+     HTML, which means it still works with JS off — the chips are the only thing
+     that stops. */
+  const root = document.querySelector<HTMLElement>("[data-filters]");
+  const grid = document.querySelector<HTMLElement>("[data-shelf]");
+  if (root && grid) {
+    const cards = Array.from(grid.querySelectorAll<HTMLElement>("[data-medium]"));
+    const counter = document.querySelector<HTMLElement>("[data-shelf-count]");
+    const selected: Record<string, string> = { medium: "", status: "" };
+
+    const apply = () => {
+      let shown = 0;
+      for (const card of cards) {
+        const ok =
+          (!selected.medium || card.dataset.medium === selected.medium) &&
+          (!selected.status || card.dataset.status === selected.status);
+        card.classList.toggle("is-hidden", !ok);
+        if (ok) shown++;
+      }
+      if (counter) counter.textContent = String(shown);
+      grid.classList.toggle("is-empty", shown === 0);
+    };
+
+    root.addEventListener("click", (event) => {
+      const button = (event.target as HTMLElement).closest<HTMLButtonElement>("[data-facet]");
+      if (!button) return;
+      const facet = button.dataset.facet!;
+      selected[facet] = button.dataset.value ?? "";
+      for (const peer of root.querySelectorAll<HTMLButtonElement>(`[data-facet="${facet}"]`)) {
+        peer.setAttribute("aria-pressed", String(peer === button));
+      }
+      apply();
+    });
+
+    apply();
+  }
+</script>
+
+<style>
+  .filters {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .filters__row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: 6px var(--space-4);
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    color: var(--fg-muted);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    cursor: pointer;
+    transition:
+      color var(--dur-fast) var(--ease),
+      border-color var(--dur-fast) var(--ease),
+      background var(--dur-fast) var(--ease);
+  }
+
+  .chip:hover {
+    color: var(--fg);
+    border-color: var(--border-strong);
+  }
+
+  .chip[aria-pressed="true"] {
+    color: var(--fg);
+    border-color: color-mix(in oklab, var(--chip-accent, var(--accent)) 60%, transparent);
+    background: color-mix(in oklab, var(--chip-accent, var(--accent)) 12%, var(--surface));
+  }
+
+  .chip__glyph {
+    color: var(--chip-accent, var(--accent));
+    font-size: var(--text-xs);
+  }
+
+  .chip--quiet {
+    font-size: var(--text-xs);
+    padding: 5px var(--space-3);
+    background: transparent;
+  }
+</style>
