@@ -32,7 +32,7 @@ const chrome = spawn(
     "--disable-gpu",
     "--hide-scrollbars",
     `--remote-debugging-port=${PORT}`,
-    "--user-data-dir=/tmp/shelf-shot-profile",
+    "--user-data-dir=/tmp/vitrine-shot-profile",
     "about:blank",
   ],
   { stdio: "ignore" },

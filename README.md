@@ -1,4 +1,4 @@
-# shelf
+# vitrine
 
 Registro personal de películas, series, libros y videojuegos. Web pública de
 lectura, escritura solo desde el repo: no hay backend, ni base de datos, ni login.
