@@ -33,8 +33,15 @@ if (!SHAPE[medium]) {
 const shape = SHAPE[medium];
 
 /* Titles the databases cannot reach from the shelf's own wording. Only the
-   identifier is overridden; the facts still come from the source. */
+   identifier is overridden; the facts still come from the source.
+
+   A value of the form Q12345 pins the Wikidata item outright, for when no title
+   can disambiguate: the 2006 anime and the 2015 Japanese drama are both
+   television series labelled exactly "Death Note", and neither the author nor
+   the season tie-break separates them, because the anime declares no creator
+   and the shelf's season count matches neither. */
 const overrides = JSON.parse(await readFile("scripts/title-overrides.json", "utf8"));
+const isQid = (v) => /^Q\d+$/.test(String(v ?? ""));
 
 const dir = join("src/content", medium);
 const files = (await readdir(dir)).filter((f) => f.endsWith(".md")).sort();
@@ -138,10 +145,14 @@ const results = [];
 for (const file of files) {
   const data = frontmatter(await readFile(join(dir, file), "utf8"));
   const slug = file.replace(/\.md$/, "");
-  const title = overrides[`${medium}/${slug}`] ?? data.title;
+  const override = overrides[`${medium}/${slug}`];
+  const pinned = isQid(override) ? override : null;
+  const title = pinned ? data.title : (override ?? data.title);
   let rows = [];
   let err = null;
   try {
+    if (pinned) rows = await claimsFor([pinned], data.year);
+    else {
     /* Both languages, unioned rather than chained. Chaining stopped at the first
        language that returned anything, and Spanish returned the 1943, 1953 and
        1996 Titanics — so Cameron's, which carries no Spanish label at all, was
@@ -155,6 +166,7 @@ for (const file of files) {
       const seen = new Set();
       for (const lang of ["es", "en"]) for (const q of await search(title, lang)) seen.add(q);
       if (seen.size) rows = await claimsFor([...seen], data.year);
+    }
     }
   } catch (e) {
     err = e.message;

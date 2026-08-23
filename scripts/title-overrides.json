@@ -1,5 +1,5 @@
 {
-  "_why": "Titles the databases cannot reach from the shelf's own wording: a slash, a parenthetical, or a Spanish title that is not even an alias on the item. Only the *identifier* is supplied here — every fact still comes from the source, because a runtime typed from memory is exactly the kind of invention the review step exists to stop.",
+  "_why": "Titles the databases cannot reach from the shelf's own wording: a slash, a parenthetical, or a Spanish title that is not even an alias on the item. A Q-number pins the Wikidata item outright, for when no title can disambiguate at all. Only the *identifier* is supplied here — every fact still comes from the source, because a runtime typed from memory is exactly the kind of invention the review step exists to stop.",
   "films/el-camino-breaking-bad": "El Camino: A Breaking Bad Movie",
   "films/fight-club-el-club-de-la-lucha": "Fight Club",
   "films/inception-origen": "Inception",
@@ -12,5 +12,6 @@
   "books/resistencia-un-ano-en-el-espacio": "Endurance: A Year in Space",
   "books/1984": "Nineteen Eighty-Four",
   "books/tus-zonas-erroneas": "Your Erroneous Zones",
-  "series/aggretsuko": "Aggretsuko"
+  "series/aggretsuko": "Aggretsuko",
+  "series/death-note": "Q718624"
 }
