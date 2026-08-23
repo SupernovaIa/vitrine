@@ -72,9 +72,39 @@ falla** — la validación ocurre antes de desplegar, no después.
 
 ## Portadas
 
-Van junto al `.md` y se referencian en relativo (`./outer-wilds.jpg`). Astro las
-convierte a AVIF/WebP con las dimensiones puestas en el HTML, así que no hay
+Una por entrada, con el script:
+
+```sh
+node scripts/add-cover.mjs games hollow-knight ~/Downloads/hk.png
+```
+
+Hace tres cosas: normaliza la imagen (máximo 900px de ancho, JPEG de calidad 88 —
+800 KB de PNG salen a ~93 KB sin pérdida visible), le saca el color de acento, y
+escribe `cover:` y `accent:` en el frontmatter. No hace falta tocar el `.md` a
+mano; de hecho no añadas `cover:` antes de que exista la imagen, porque el
+esquema la valida en build y el build fallará.
+
+**Qué imagen buscar:** desde 600×900 va sobrado (el mayor tamaño en que se
+muestra es 300px en la ficha, y eso cubre pantallas 3x). El ratio da igual: se
+recorta a 2:3, que es lo que mantiene la rejilla uniforme.
+
+Astro las convierte a AVIF/WebP con `width`/`height` en el HTML, así que no hay
 saltos de layout. Todas se normalizan a 2:3.
+
+Sin portada no se rompe nada: se dibuja una tarjeta tipográfica con el título, la
+autoría y el año, y ocupa exactamente el mismo hueco que una portada real.
+
+### Cómo se elige el `accent`
+
+No es el color dominante de la imagen. En un póster el color más frecuente es el
+negro del fondo (`#080808` en Hollow Knight), y saturar un gris **se inventa un
+tono** — con eso, una portada azul salía roja.
+
+Lo que hace el script es muestrear la imagen pequeña, descartar los píxeles
+demasiado oscuros, claros o grises para tener tono fiable, y quedarse con el
+grupo de tono que más peso cromático acumula. En Hollow Knight da `#1d78b9`, que
+es el cian que cualquiera nombraría al mirar la portada. Si la imagen es
+monocroma de verdad, no escribe `accent` y la entrada usa el color de su medio.
 
 Sin portada no se rompe nada: se dibuja una tarjeta tipográfica con el título,
 la autoría y el año. Es un estado previsto, no un error — con los libros va a
@@ -99,6 +129,8 @@ src/
     index.astro         estantería + "ahora mismo" + filtros
     [medium]/[slug].astro
   styles/               base.css (escala) + theme.css (color y tipografía)
+scripts/add-cover.mjs   coloca una portada y le extrae el color de acento
+scripts/import-notion.mjs  regenera las entradas desde el export de Notion
 scripts/shot.mjs        capturas a un viewport real, sobre CDP
 ```
 
@@ -107,8 +139,9 @@ Los tokens siguen el mismo contrato semántico que `cheatsheets`: un hex fuera d
 
 ## Pendiente
 
-- **Portadas.** Ninguna de las 73 tiene imagen todavía; todas se dibujan como
-  tarjeta tipográfica.
+- **Portadas.** 1 de 73 (Hollow Knight). El resto se dibuja como tarjeta
+  tipográfica. Lo que más rinde es empezar por los 10 de Tier S, que salen
+  grandes en la portada.
 - **Fechas.** Notion no guardaba ninguna, así que la estantería se ordena por
   estado y tier. Con `finished` relleno se puede ordenar cronológicamente y sacar
   estadísticas por año (`shelfOrder` en `src/lib/media.ts`).

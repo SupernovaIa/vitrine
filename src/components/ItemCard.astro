@@ -69,7 +69,7 @@ const caption = titled || Boolean(label);
       <div class="card__body">
         {titled && <h3 class="card__title">{data.title}</h3>}
         <p class="card__meta mono">
-          {label ? label : metaLine(item)}
+          {label ? label : metaLine(item, { compact: true })}
           {label && <span class="card__sep">·</span>}
           {label && <span class="card__dim">{MEDIA[item.medium].one}</span>}
         </p>

@@ -149,13 +149,20 @@ export function progressLabel(item: Item): string | null {
   return null;
 }
 
-/** The metadata line: year, author, and whatever unit the medium counts in. */
-export function metaLine(item: Item): string {
+/**
+ * The metadata line: year, author, and whatever unit the medium counts in.
+ *
+ * `compact` drops that last part, for the caption under a card. At 185px wide,
+ * "2017 · Team Cherry · PC · Switch" wraps to two cramped lines — and the detail
+ * page carries the full record anyway.
+ */
+export function metaLine(item: Item, { compact = false } = {}): string {
   const d = item.data;
   const bits: (string | undefined)[] = [
     d.year ? String(d.year) : undefined,
     d.by as string | undefined,
   ];
+  if (compact) return bits.filter(Boolean).join(" · ");
   if (item.medium === "films" && d.runtime) bits.push(`${d.runtime} min`);
   if (item.medium === "series" && d.seasons)
     bits.push(`${d.seasons} ${d.seasons === 1 ? "temporada" : "temporadas"}`);

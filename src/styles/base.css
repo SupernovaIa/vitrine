@@ -76,6 +76,11 @@ a {
 
 img {
   max-width: 100%;
+  /* Not optional. Astro emits width/height attributes (which is what stops the
+     layout shifting), and the browser treats `height` as a presentational hint:
+     without `height: auto` the image renders at its intrinsic pixel height and
+     `aspect-ratio` never gets a say. */
+  height: auto;
   display: block;
 }
 
