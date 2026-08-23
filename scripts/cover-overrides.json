@@ -1,0 +1,8 @@
+{
+  "_why": "Where the automatic pick is the wrong artwork and only an eye can tell. Open Library's search returns the right *record* and the wrong *scan*: a calendar tie-in, a slipcase product shot, a workbook, a comic adaptation. The number is an Open Library cover id; null means the scan it has is not this book's jacket and the tile stays a title card, which the design treats as a first-class state.",
+
+  "books/el-poder-del-ahora": 15111063,
+  "books/7-habitos-de-la-gente-altamente-efectiva": 1051915,
+  "books/un-mundo-feliz": 8231823,
+  "books/como-hacer-amigos-e-influir-en-las-personas": null
+}

@@ -7,4 +7,6 @@ status: "done"
 tier: "A"
 genre: "Autoayuda"
 physical: true
+cover: ./el-arte-de-pensar.jpg
+accent: "#d20b1c"
 ---

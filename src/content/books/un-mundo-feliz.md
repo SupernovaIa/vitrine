@@ -7,4 +7,6 @@ status: "done"
 tier: "B"
 genre: "Novela"
 physical: false
+cover: ./un-mundo-feliz.jpg
+accent: "#a6983f"
 ---

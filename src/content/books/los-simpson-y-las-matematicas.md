@@ -7,4 +7,6 @@ status: "done"
 tier: "B"
 genre: "Ciencia"
 physical: true
+cover: ./los-simpson-y-las-matematicas.jpg
+accent: "#f8d20c"
 ---

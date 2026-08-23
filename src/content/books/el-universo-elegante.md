@@ -7,4 +7,5 @@ status: "done"
 tier: "A"
 genre: "Ciencia"
 physical: true
+cover: ./el-universo-elegante.jpg
 ---

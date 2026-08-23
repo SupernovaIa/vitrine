@@ -7,4 +7,6 @@ status: "done"
 tier: "B"
 genre: "Ciencia"
 physical: false
+cover: ./cinco-ecuaciones-que-cambiaron-el-mundo.jpg
+accent: "#9b623b"
 ---

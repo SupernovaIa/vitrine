@@ -7,4 +7,6 @@ status: "done"
 tier: "C"
 genre: "Autoayuda"
 physical: false
+cover: ./getting-things-done.jpg
+accent: "#098dcd"
 ---

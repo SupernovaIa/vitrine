@@ -6,4 +6,6 @@ by: "Daniel Kahneman"
 status: "pending"
 genre: "Autoayuda"
 physical: false
+cover: ./pensar-rapido-pensar-despacio.jpg
+accent: "#d69b42"
 ---

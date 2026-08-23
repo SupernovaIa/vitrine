@@ -6,4 +6,6 @@ by: "Cal Newport"
 status: "pending"
 genre: "Autoayuda"
 physical: true
+cover: ./deep-work.jpg
+accent: "#e3c00c"
 ---

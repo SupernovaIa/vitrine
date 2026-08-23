@@ -5,4 +5,6 @@ pages: 451
 status: "pending"
 genre: "Autoayuda"
 physical: false
+cover: ./7-habitos-de-la-gente-altamente-efectiva.jpg
+accent: "#cd091c"
 ---
