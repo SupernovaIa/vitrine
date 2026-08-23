@@ -14,7 +14,9 @@
   --radius-md: 10px;
   --radius-lg: 16px;
 
-  --text-mono-xs: 10.5px;
+  /* The floor for anything functional. 10.5px was below every mainstream
+     minimum, and the container-query clamp under it bottomed out at 8.5px. */
+  --text-mono-xs: 11.5px;
   --text-xs: 12px;
   --text-sm: 13.5px;
   --text-base: 15px;
@@ -26,7 +28,9 @@
   --leading-body: 1.6;
   --leading-prose: 1.75;
 
-  --tracking-kicker: 0.22em;
+  /* 0.22em was past the legibility floor at this size: at 11.5px the letters
+     stop reading as words. Wide enough to mark a label, tight enough to read. */
+  --tracking-kicker: 0.14em;
   --tracking-tight: -0.02em;
 
   --measure: 64ch;
@@ -91,9 +95,12 @@ img {
   font-variant-numeric: tabular-nums;
 }
 
+/* A field label: names the data next to it. Not navigation, not a heading, and
+   never an eyebrow above one — the heading carries its own weight. */
 .kicker {
   font-family: var(--font-mono);
   font-size: var(--text-mono-xs);
+  line-height: 1.35;
   letter-spacing: var(--tracking-kicker);
   text-transform: uppercase;
   color: var(--fg-subtle);

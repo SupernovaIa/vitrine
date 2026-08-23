@@ -3,7 +3,6 @@ import Cover from "./Cover.astro";
 import Tier from "./Tier.astro";
 import {
   MEDIA,
-  STATUS,
   accentOf,
   metaLine,
   progressLabel,
@@ -51,7 +50,6 @@ const caption = titled || Boolean(label);
       )
     }
 
-    {queued && <span class="card__pill kicker">{STATUS.pending.short}</span>}
 
     {
       /* Progress reads as a bar on the poster edge rather than a number in the
@@ -137,18 +135,6 @@ const caption = titled || Boolean(label);
     line-height: 0;
   }
 
-  .card__pill {
-    position: absolute;
-    bottom: var(--space-2);
-    left: var(--space-2);
-    padding: 3px var(--space-2);
-    color: var(--fg-muted);
-    background: rgba(10, 11, 14, 0.72);
-    backdrop-filter: blur(6px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: var(--radius-sm);
-  }
-
   .card__progress {
     position: absolute;
     left: 0;
@@ -192,6 +178,6 @@ const caption = titled || Boolean(label);
 
   .card__sep,
   .card__dim {
-    color: var(--border-strong);
+    color: var(--fg-subtle);
   }
 </style>

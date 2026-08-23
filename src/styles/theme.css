@@ -10,7 +10,10 @@
 
   --fg: #eceef3;
   --fg-muted: #9ba1b0;
-  --fg-subtle: #767d8d;
+  /* 5.47:1 on --surface, where #767d8d measured 4.46:1 and failed. The token
+     contract came from the cheatsheets project, which had already lifted this
+     exact value for this exact reason — the copy reintroduced the fixed bug. */
+  --fg-subtle: #868c9c;
 
   --accent: #e8c97a;
   --accent-soft: rgba(232, 201, 122, 0.12);

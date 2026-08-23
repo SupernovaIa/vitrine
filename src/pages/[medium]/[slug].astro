@@ -95,14 +95,18 @@ const facts = [
     </div>
 
     <div class="detail__main">
+      <h1>{data.title}</h1>
+      {data.sub && <p class="detail__sub mono">{data.sub}</p>}
+
+      {/* Below the title, not above it. What something is and where it stands are
+          facts about the work, so they read as metadata — an eyebrow over the
+          heading would just borrow the title's weight. */}
       <p class="kicker detail__kicker">
         <span class="detail__glyph" aria-hidden="true">{medium.glyph}</span>
         {medium.one}
         <span class="detail__status">· {STATUS[data.status]?.label}</span>
       </p>
 
-      <h1>{data.title}</h1>
-      {data.sub && <p class="detail__sub mono">{data.sub}</p>}
       <p class="detail__meta mono">{metaLine(item)}</p>
 
       {

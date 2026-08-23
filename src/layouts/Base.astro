@@ -32,7 +32,7 @@ const { title, description = "Todo lo que veo, leo y juego." } = Astro.props;
           <span class="masthead__mark" aria-hidden="true">◍</span>
           <span>vitrine</span>
         </a>
-        <nav class="masthead__nav kicker">
+        <nav class="masthead__nav">
           <a href="/">Estantería</a>
         </nav>
       </div>
@@ -80,7 +80,8 @@ const { title, description = "Todo lo que veo, leo y juego." } = Astro.props;
       }
 
       .masthead__nav a {
-        color: var(--fg-subtle);
+        font-size: var(--text-sm);
+        color: var(--fg-muted);
         transition: color var(--dur-fast) var(--ease);
       }
 
