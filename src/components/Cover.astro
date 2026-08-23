@@ -116,9 +116,9 @@ const progress = progressLabel(item);
     background: linear-gradient(
       to bottom,
       transparent 0%,
-      rgba(6, 7, 9, 0.45) 34%,
-      rgba(6, 7, 9, 0.88) 62%,
-      rgba(6, 7, 9, 0.96) 100%
+      var(--scrim-soft) 34%,
+      var(--scrim-strong) 62%,
+      var(--scrim-solid) 100%
     );
     pointer-events: none;
   }
@@ -137,7 +137,7 @@ const progress = progressLabel(item);
   .cover--art .cover__glyph {
     color: #fff;
     opacity: 0.85;
-    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8);
+    text-shadow: 0 1px 6px rgb(0 0 0 / 0.8);
   }
 
   /* Anchored to the bottom of the tile: everything above is breathing room, so
@@ -191,7 +191,7 @@ const progress = progressLabel(item);
      the muted tokens that were tuned for the flat tile. */
   .cover--art .cover__by,
   .cover--art .cover__year {
-    color: rgba(255, 255, 255, 0.82);
+    color: var(--fg-on-art);
   }
 
   .cover--art .cover__title {

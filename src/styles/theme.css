@@ -27,14 +27,25 @@
   --medium-books: #e0964e;
   --medium-games: #3fb3a0;
 
-  /* The tier scale, in the colours the Notion database already used, so the
-     scale looks like the one it replaces. Marks and badge backgrounds only —
-     never small type. */
-  --tier-s: #b57bff;
-  --tier-a: #5b8ef0;
-  --tier-b: #3fb3a0;
-  --tier-c: #e0964e;
-  --tier-d: #e06a8b;
+  /* No tier colours. The scale used to carry five hues borrowed from the Notion
+     database — and four of them were byte-identical to the four medium accents
+     above, so a tile said "series" and "tier A" in two colours drawn from one
+     palette and neither code could be learned. Colour now belongs to the medium
+     alone; tier is ordinal, so Tier.astro expresses it as a ramp of fill and
+     weight, with --accent reserved for S. */
+
+  /* Ground for type that sits over artwork, where no token can know what is
+     behind it. Opaque enough at --scrim-strong that a white cover still clears
+     4.5:1 for 11.5px text. */
+  --scrim-soft: rgba(6, 7, 9, 0.45);
+  --scrim-strong: rgba(6, 7, 9, 0.88);
+  --scrim-solid: rgba(6, 7, 9, 0.96);
+
+  /* Unfilled portion of a progress bar, on top of unknown artwork. */
+  --track: rgba(255, 255, 255, 0.14);
+
+  /* Type over artwork: not --fg-muted, which was tuned against a flat surface. */
+  --fg-on-art: rgba(255, 255, 255, 0.82);
 
   --font-sans: "Poppins", system-ui, sans-serif;
   --font-display: "Poppins", system-ui, sans-serif;

@@ -14,8 +14,7 @@ const { tier, undecided = false, size = "sm" } = Astro.props;
 {
   tier ? (
     <span
-      class:list={["tier", `tier--${size}`]}
-      style={`--tier-color: var(--tier-${tier.toLowerCase()})`}
+      class:list={["tier", `tier--${tier.toLowerCase()}`, `tier--${size}`]}
       title={TIERS[tier].label}
     >
       {tier}
@@ -26,27 +25,73 @@ const { tier, undecided = false, size = "sm" } = Astro.props;
 }
 
 <style>
-  /* A single glyph in a filled square. The letter is the whole scale, so it gets
-     the colour and nothing else on the card competes with it. */
+  /*
+    An ordinal ramp, not five hues. Rank descends by fill and then by weight:
+    S filled in the brand accent, A filled in the foreground, B–D outlined and
+    progressively quieter. Colour is the medium's job everywhere else, and the
+    letter itself carries the meaning, so nothing here depends on hue alone.
+
+    Every step keeps a dark ground because the badge sits on artwork it cannot
+    predict: at --scrim-strong even a white cover leaves the dimmest glyph at
+    4.6:1.
+  */
   .tier {
     display: inline-grid;
     place-items: center;
     font-family: var(--font-mono);
     font-weight: 700;
     line-height: 1;
-    color: var(--accent-contrast);
-    background: var(--tier-color);
     border-radius: var(--radius-sm);
+    background: var(--scrim-strong);
+    backdrop-filter: blur(4px);
+    border: 1px solid var(--border);
+    color: var(--fg-subtle);
+  }
+
+  /* S is the only tier that gets colour. It is the canon marker, and rarity is
+     what gives it force. */
+  .tier--s {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-contrast);
+    backdrop-filter: none;
+  }
+
+  /* Filled, but dimmer than S. A near-white fill out-shone the gold badge above
+     it, so the top of the scale was not the loudest step — which is the one
+     thing an ordinal ramp has to get right. */
+  .tier--a {
+    background: var(--fg-muted);
+    border-color: var(--fg-muted);
+    color: var(--bg);
+    backdrop-filter: none;
+  }
+
+  .tier--b {
+    border-color: var(--border-strong);
+    color: var(--fg);
+  }
+
+  .tier--c {
+    color: var(--fg-muted);
+  }
+
+  /* D keeps a solid border; the dashed one belongs to "undecided". */
+  .tier--d {
+    color: var(--fg-subtle);
+  }
+
+  .tier--none {
+    border-style: dashed;
+    border-color: var(--border-strong);
+    color: var(--fg-subtle);
   }
 
   .tier--sm {
     width: 20px;
     height: 20px;
     font-size: var(--text-xs);
-    /* Sits on artwork, so it needs its own separation from whatever is behind. */
-    box-shadow:
-      0 0 0 1px rgba(0, 0, 0, 0.45),
-      0 2px 8px rgba(0, 0, 0, 0.55);
+    box-shadow: 0 2px 8px rgb(0 0 0 / 0.5);
   }
 
   .tier--lg {
@@ -54,13 +99,5 @@ const { tier, undecided = false, size = "sm" } = Astro.props;
     height: 34px;
     font-size: var(--text-lg);
     border-radius: var(--radius-md);
-  }
-
-  /* Finished but unrated: the shape of a tier with none of its colour. */
-  .tier--none {
-    color: var(--fg-subtle);
-    background: transparent;
-    box-shadow: none;
-    border: 1px dashed var(--border-strong);
   }
 </style>
