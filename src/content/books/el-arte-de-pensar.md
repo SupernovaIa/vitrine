@@ -1,6 +1,7 @@
 ---
 title: "El arte de pensar"
 year: 2018
+pages: 240
 by: "José Carlos Ruiz"
 status: "done"
 tier: "A"

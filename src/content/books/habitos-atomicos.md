@@ -1,6 +1,7 @@
 ---
 title: "Hábitos atómicos"
 year: 2018
+pages: 328
 by: "James Clear"
 status: "done"
 tier: "S"
