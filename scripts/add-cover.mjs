@@ -51,9 +51,15 @@ if (meta.width < 480) {
   );
 }
 
+/* JPEG has no alpha, and sharp's default when it drops one is black. A box-art
+   render arrives as a PNG cut out against nothing, so that default would give
+   Arceus a black surround next to the white one every other Nintendo packshot
+   has. White is the ground the boxes are photographed on; say so rather than
+   inherit a colour nobody chose. */
 await input
   .clone()
   .resize({ width: Math.min(meta.width, MAX_WIDTH), withoutEnlargement: true })
+  .flatten({ background: "#ffffff" })
   .jpeg({ quality: 88, mozjpeg: true })
   .toFile(out);
 
