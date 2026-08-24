@@ -1,6 +1,6 @@
 # vitrine
 
-**https://vitrine-nine-self.vercel.app**
+**https://vitrine-supernovaias-projects.vercel.app**
 
 Registro personal de películas, series, libros y videojuegos. Web pública de
 lectura, escritura solo desde el repo: no hay backend, ni base de datos, ni login.
