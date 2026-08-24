@@ -5,4 +5,6 @@ runtime: 101
 by: "Marc Webb"
 status: "done"
 tier: "C"
+cover: ./un-don-excepcional.jpg
+accent: "#c68e67"
 ---

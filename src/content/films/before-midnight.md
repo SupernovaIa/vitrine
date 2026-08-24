@@ -5,4 +5,6 @@ runtime: 109
 by: "Richard Linklater"
 status: "done"
 tier: "A"
+cover: ./before-midnight.jpg
+accent: "#5aa3d8"
 ---

@@ -9,7 +9,11 @@ Cada entrada es un fichero Markdown. `git` es el almacenamiento, el historial y
 la copia de seguridad.
 
 Las 73 entradas iniciales vienen de las cuatro bases de datos de Notion
-(`scripts/notion-export.json` + `scripts/import-notion.mjs`).
+(`scripts/notion-export.json` + `scripts/import-notion.mjs`). **Ese import se
+hizo una vez y no se repite.** El export guarda los títulos tal como estaban en
+Notion, dos de ellos mal (*Tregua*, *The Cult of the Lamb*), así que reejecutarlo
+pisaría las correcciones. Se conserva como registro de lo que había, no como algo
+que se vuelva a correr.
 
 ## Arrancar
 
@@ -86,6 +90,50 @@ escribe `cover:` y `accent:` en el frontmatter. No hace falta tocar el `.md` a
 mano; de hecho no añadas `cover:` antes de que exista la imagen, porque el
 esquema la valida en build y el build fallará.
 
+Cine y series van en bloque, sin clave de ninguna API:
+
+```sh
+node scripts/fetch-tmdb-covers.mjs            # dice qué obra empareja con cada entrada
+node scripts/fetch-tmdb-covers.mjs --apply    # y entonces las coloca
+```
+
+Wikidata guarda el propio id de TMDB (`P4947` cine, `P4983` series) y
+`image.tmdb.org` sirve las imágenes sin autenticación: lo que pide clave es la
+*API*, no la CDN. Así que la identidad sale de Wikidata —consultable, y con
+fecha de publicación para desempatar los cuatro *Titanic*— y del HTML de la
+ficha pública sale solo la ruta del póster. El reparto es deliberado: la mitad
+frágil (raspar marcado) no decide nada, solo acarrea un nombre de fichero.
+
+Cuando la etiqueta exacta no casa —Notion escribió los títulos en minúscula de
+frase, y `rdfs:label` distingue mayúsculas; y *El indomable Will Hunting* es un
+alias, no una etiqueta— hay una segunda pasada por `wbsearchentities`, que ignora
+las mayúsculas y lee alias. Sus resultados vuelven a pasar por el mismo SPARQL
+que exige id de TMDB y fecha, porque también devuelve libros y canciones con esas
+palabras.
+
+**Repasa siempre la salida en seco antes de `--apply`.** El año de la entrada
+descarta al candidato que no cuadra, y ahí se ve: `super-mario-bros` emparejaba
+con la de imagen real de 1993 teniendo `year: 2023`. Cuando ningún título
+desempata, `title-overrides.json` acepta un Q-número que pina el ítem.
+
+Los juegos, igual, pero necesitan dos tiendas porque ninguna cubre la
+estantería sola:
+
+```sh
+node scripts/fetch-game-covers.mjs --apply
+```
+
+**Steam** para lo que tenga AppID (`P1733` en Wikidata): `library_600x900_2x.jpg`
+mide exactamente 600×900, que es el 2:3 al que recorta la rejilla. **El eShop
+europeo** para el resto, que son exclusivos de Switch sin AppID que buscar; su
+búsqueda es abierta, responde en español, y de las tres imágenes que trae cada
+ficha hay que quedarse con `image_url` **solo si es el packshot** —la caja
+física, 500×809—: Nintendo lo está retirando en las fichas digitales y ahí sirve
+el cuadrado en su lugar, que recortado a 2:3 destroza el arte.
+
+`Leyendas Pokémon: Arceus` es justo ese caso, en los cinco idiomas del eShop, y
+su caja está puesta a mano con `add-cover.mjs`.
+
 Si el color que saca no es el que domina la portada, `--accent "#5ab5c1"` lo
 fija a mano. Pasa cuando el campo es oscuro y lo vivo es minoritario: *El
 universo elegante* es negro con una nebulosa teal y naranja, y el script
@@ -154,12 +202,14 @@ src/
 scripts/
   add-cover.mjs         coloca una portada y le extrae el color de acento
   fetch-book-covers.mjs  sobrecubiertas desde Open Library (solo libros)
+  fetch-tmdb-covers.mjs  pósters de cine y series, vía Wikidata + TMDB, sin clave
+  fetch-game-covers.mjs  cajas de juegos, vía Steam y el eShop europeo, sin clave
   cover-overrides.json   portadas elegidas a mano, cuando el escaneo no vale
   lookup-metadata.mjs    datos de la obra desde Wikidata; no escribe nada
   lookup-books.mjs       lo mismo desde Open Library
   apply-metadata.mjs     aplica un resultado ya revisado, sin sobreescribir
   title-overrides.json   el identificador cuando el título no basta (o un QID)
-  import-notion.mjs      regenera las entradas desde el export de Notion
+  import-notion.mjs      el import inicial, hecho una vez — no reejecutar
   shot.mjs               capturas a un viewport real, sobre CDP
 ```
 
@@ -168,15 +218,18 @@ Los tokens siguen el mismo contrato semántico que `cheatsheets`: un hex fuera d
 
 ## Pendiente
 
-- **Portadas.** 32 de 73: libros 21/24, series 5/15, películas 3/26, juegos 3/8.
-  Los diez de Tier S ya están. Los libros los resuelve `fetch-book-covers.mjs`
-  contra Open Library; para cine, series y juegos **no hay fuente sin clave**, y
-  merece la pena saber por qué antes de volver a intentarlo: `pageimages` de
-  Wikipedia se salta los ficheros *non-free* y todos los pósters lo son (pedir
-  Interstellar o Titanic devuelve nada; Breaking Bad devuelve su logotipo
-  apaisado), la cuota anónima de Google Books está agotada, e iTunes ya no
-  responde a `media=movie`. Con una clave de TMDB se cerrarían las 38 de cine y
-  series de una tirada.
+- **Portadas.** 70 de 73. Cine, series y juegos están al 100%. Quedan **3
+  libros** cuyo mejor escaneo en Open Library no llega al mínimo: *La tregua*
+  (246×404), *Tus zonas erróneas* (128×196) y *Cómo hacer amigos e influir en
+  las personas*, ya descartado a mano en `cover-overrides.json`. Los tres se
+  cierran con `add-cover.mjs` en cuanto aparezca una imagen; no queda nada
+  automático por intentar.
+
+  Lo que **no** funciona, comprobado y no supuesto: iTunes Search responde
+  `resultCount: 0` a `media=movie` y `media=tvShow`; la cuota anónima de Google
+  Books está agotada; y los pósters *non-free* de Wikipedia sí se listan con
+  `prop=images` —era solo `pageimages` quien los saltaba— pero el uso legítimo
+  los limita a unos 275×362, por debajo del suelo utilizable.
 - **Fechas.** Notion no guardaba ninguna, así que la estantería se ordena por
   estado y tier. Con `finished` relleno se puede ordenar cronológicamente y sacar
   estadísticas por año (`shelfOrder` en `src/lib/media.ts`).

@@ -5,4 +5,6 @@ by: "Game Freak"
 status: "done"
 tier: "A"
 platforms: ["Switch"]
+cover: ./leyendas-pokemon-arceus.jpg
+accent: "#3b7a9b"
 ---

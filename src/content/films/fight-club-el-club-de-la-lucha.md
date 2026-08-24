@@ -5,4 +5,6 @@ runtime: 139
 by: "David Fincher"
 status: "done"
 tier: "C"
+cover: ./fight-club-el-club-de-la-lucha.jpg
+accent: "#eba535"
 ---

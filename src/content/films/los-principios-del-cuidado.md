@@ -5,4 +5,6 @@ runtime: 93
 by: "Rob Burnett"
 status: "done"
 tier: "C"
+cover: ./los-principios-del-cuidado.jpg
+accent: "#bcd501"
 ---

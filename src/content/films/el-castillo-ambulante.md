@@ -5,4 +5,6 @@ runtime: 119
 by: "Hayao Miyazaki"
 status: "done"
 tier: "B"
+cover: ./el-castillo-ambulante.jpg
+accent: "#4576b6"
 ---

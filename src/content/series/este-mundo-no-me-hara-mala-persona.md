@@ -5,4 +5,6 @@ episodes: 6
 status: "done"
 tier: "C"
 seasons: 1
+cover: ./este-mundo-no-me-hara-mala-persona.jpg
+accent: "#ce8a59"
 ---

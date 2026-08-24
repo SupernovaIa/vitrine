@@ -6,4 +6,6 @@ by: "Dale Carnegie"
 status: "pending"
 genre: "Autoayuda"
 physical: true
+cover: ./como-hacer-amigos-e-influir-en-las-personas.jpg
+accent: "#e4ab4e"
 ---

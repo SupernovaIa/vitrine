@@ -5,4 +5,6 @@ runtime: 94
 by: "Jeff Orlowski"
 status: "done"
 tier: "C"
+cover: ./the-social-dilemma.jpg
+accent: "#3552a1"
 ---

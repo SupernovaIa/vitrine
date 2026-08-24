@@ -5,4 +5,6 @@ by: "Edmund McMillen"
 status: "done"
 tier: "A"
 platforms: ["PC"]
+cover: ./the-binding-of-isaac-rebirth.jpg
+accent: "#9b423b"
 ---

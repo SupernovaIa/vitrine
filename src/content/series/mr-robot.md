@@ -5,4 +5,6 @@ by: "Sam Esmail"
 episodes: 45
 status: "pending"
 seasons: 4
+cover: ./mr-robot.jpg
+accent: "#b71f25"
 ---

@@ -5,4 +5,6 @@ episodes: 6
 status: "done"
 tier: "A"
 seasons: 1
+cover: ./cortar-por-la-linea-de-puntos.jpg
+accent: "#68beca"
 ---

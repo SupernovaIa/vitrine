@@ -6,4 +6,6 @@ episodes: 22
 status: "done"
 tier: "B"
 seasons: 2
+cover: ./el-juego-del-calamar.jpg
+accent: "#2459b2"
 ---

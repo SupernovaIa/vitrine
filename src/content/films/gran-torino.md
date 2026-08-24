@@ -5,4 +5,6 @@ runtime: 116
 by: "Clint Eastwood"
 status: "done"
 tier: "B"
+cover: ./gran-torino.jpg
+accent: "#9f6c37"
 ---
