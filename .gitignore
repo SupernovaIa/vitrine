@@ -3,6 +3,10 @@ dist/
 .astro/
 .DS_Store
 
+# Where the cover scripts stage what they download before add-cover.mjs
+# normalises it into the collection. Nothing here is the source of truth.
+.cache/
+
 # Vercel: project link and the OIDC token it downloads.
 .vercel
 .env*
