@@ -34,6 +34,7 @@ const tier = tierOf(item);
   href={item.url}
   data-medium={item.medium}
   data-status={data.status}
+  data-tier={tier ?? (undecided(item) ? "undecided" : "")}
   style={`--item-accent: ${accentOf(item)}`}
 >
   <div class="card__poster">
