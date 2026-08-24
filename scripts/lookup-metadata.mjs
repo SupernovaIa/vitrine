@@ -20,14 +20,14 @@ const jsonOut = rest.includes("--json") ? rest[rest.indexOf("--json") + 1] : nul
 
 /** Type constraint per medium, so a chess opening cannot answer for a TV series. */
 const SHAPE = {
-  films: { type: "wd:Q11424", props: { by: "P57", runtime: "P2047", genre: "P136" }, label: "película" },
-  series: { type: "wd:Q5398426", props: { by: "P170", episodes: "P1113", seasons: "P2437", genre: "P136" }, label: "serie" },
-  books: { type: "wd:Q7725634", props: { by: "P50", pages: "P1104", year: "P577", genre: "P136" }, label: "obra escrita" },
-  games: { type: "wd:Q7889", props: { by: "P178", genre: "P136" }, label: "videojuego" },
+  films: { type: "wd:Q11424", props: { by: "P57", runtime: "P2047", genre: "P136" }, label: "film" },
+  series: { type: "wd:Q5398426", props: { by: "P170", episodes: "P1113", seasons: "P2437", genre: "P136" }, label: "series" },
+  books: { type: "wd:Q7725634", props: { by: "P50", pages: "P1104", year: "P577", genre: "P136" }, label: "written work" },
+  games: { type: "wd:Q7889", props: { by: "P178", genre: "P136" }, label: "video game" },
 };
 
 if (!SHAPE[medium]) {
-  console.error("uso: node scripts/lookup-metadata.mjs <films|series|books|games> [--json out.json]");
+  console.error("usage: node scripts/lookup-metadata.mjs <films|series|books|games> [--json out.json]");
   process.exit(1);
 }
 const shape = SHAPE[medium];
@@ -250,7 +250,7 @@ for (const file of files) {
 
 const pad = (s, n) => String(s ?? "").slice(0, n).padEnd(n);
 const keys = Object.keys(shape.props);
-console.log(`${pad("entrada", 30)} ${pad("QID", 11)} ${pad("etiqueta en Wikidata", 26)} ${keys.map((k) => pad(k, 22)).join(" ")}`);
+console.log(`${pad("entry", 30)} ${pad("QID", 11)} ${pad("Wikidata label", 26)} ${keys.map((k) => pad(k, 22)).join(" ")}`);
 for (const r of results) {
   console.log(
     `${pad(r.title, 30)} ${pad(r.qid ?? "SIN MATCH", 11)} ${pad(r.matched ?? "—", 26)} ` +
@@ -264,16 +264,16 @@ const suspicious = results.filter(
 );
 const mismatched = results.filter((r) => r.mismatch);
 if (mismatched.length) {
-  console.log(`\nemparejamiento RECHAZADO — la autoría no coincide con la de la entrada:`);
+  console.log(`\nmatch REJECTED — the authorship disagrees with the entry's:`);
   for (const r of mismatched) console.log(`  "${r.title}"  ->  ${r.mismatch}`);
 }
 const ambiguous = results.filter((r) => r.ambiguous);
 if (ambiguous.length) {
-  console.log(`\nambiguas — más de una obra responde al mismo título:`);
+  console.log(`\nambiguous — more than one work answers to the same title:`);
   for (const r of ambiguous) console.log(`  "${r.title}"  ->  ${r.ambiguous.join(", ")}`);
 }
 if (suspicious.length) {
-  console.log(`\nrevisar a mano — la etiqueta no coincide con el título:`);
+  console.log(`\nreview by hand — the label disagrees with the title:`);
   for (const r of suspicious) console.log(`  "${r.title}"  ->  "${r.matched}" (${r.qid})`);
 }
 if (jsonOut) {

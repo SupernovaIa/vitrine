@@ -125,20 +125,20 @@ for (const file of files) {
   const key = `books/${slug}`;
   if (key in picks) {
     if (picks[key] === null) {
-      skipped.push({ slug, reason: "descartada a mano: el escaneo que hay no es su sobrecubierta" });
-      console.log(`— ${slug.padEnd(46)} descartada a mano`);
+      skipped.push({ slug, reason: "dropped by hand: the scan on offer is not this book's jacket" });
+      console.log(`— ${slug.padEnd(46)} dropped by hand`);
       continue;
     }
     const shot = await measure(picks[key]);
     await sleep(150);
     if (!shot) {
-      skipped.push({ slug, reason: `la portada elegida (${picks[key]}) ya no responde` });
-      console.log(`✗ ${slug.padEnd(46)} portada elegida ${picks[key]} no responde`);
+      skipped.push({ slug, reason: `the chosen cover (${picks[key]}) no longer answers` });
+      console.log(`✗ ${slug.padEnd(46)} chosen cover ${picks[key]} does not answer`);
       continue;
     }
     const staged = join(tmp, `${slug}.jpg`);
     await writeFile(staged, shot.buf);
-    console.log(`✓ ${slug.padEnd(46)} ${shot.width}×${shot.height}  elegida a mano (${picks[key]})`);
+    console.log(`✓ ${slug.padEnd(46)} ${shot.width}×${shot.height}  chosen by hand (${picks[key]})`);
     if (apply) {
       const { stdout } = await run("node", ["scripts/add-cover.mjs", "books", slug, staged]);
       console.log(`   → ${stdout.match(/accent\s+(\S+)/)?.[1] ?? "?"}`);
@@ -173,12 +173,12 @@ for (const file of files) {
 
   if (!best || best.width < MIN_WIDTH) {
     const why = best
-      ? `${best.width}×${best.height}, por debajo de ${MIN_WIDTH}px`
+      ? `${best.width}×${best.height}, under ${MIN_WIDTH}px`
       : rejected
-        ? `${rejected} escaneo(s) con proporción de audiolibro, ninguna sobrecubierta`
+        ? `${rejected} scan(s) with audiobook proportions, no jacket among them`
         : candidates.length
-          ? "sin escaneo utilizable"
-          : `${docs.length} edición(es) del autor, ninguna de este título`;
+          ? "no usable scan"
+          : `${docs.length} edition(s) by the author, none of this title`;
     skipped.push({ slug, reason: why });
     console.log(`— ${slug.padEnd(46)} ${why}`);
     continue;
@@ -198,5 +198,5 @@ for (const file of files) {
 
 if (!apply) await rm(tmp, { recursive: true, force: true });
 
-console.log(`\n${done.length} con portada${apply ? " aplicada" : " localizada"}, ${skipped.length} sin ella`);
+console.log(`\n${done.length} ${apply ? "jackets attached" : "jackets found"}, ${skipped.length} without one`);
 for (const s of skipped) console.log(`   ${s.slug}: ${s.reason}`);

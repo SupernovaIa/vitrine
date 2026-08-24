@@ -16,7 +16,7 @@ import { join } from "node:path";
 
 const [medium, jsonPath, ...rest] = process.argv.slice(2);
 if (!medium || !jsonPath) {
-  console.error("uso: node scripts/apply-metadata.mjs <medium> <lookup.json> [--fields a,b] [--dry]");
+  console.error("usage: node scripts/apply-metadata.mjs <medium> <lookup.json> [--fields a,b] [--dry]");
   process.exit(1);
 }
 const dry = rest.includes("--dry");
@@ -33,9 +33,9 @@ const skipped = [];
 
 for (const r of rows) {
   const reasons = [];
-  if (!r.qid) reasons.push("sin emparejar");
+  if (!r.qid) reasons.push("unmatched");
   if (r.ambiguous) reasons.push(`ambigua (${r.ambiguous.join(", ")})`);
-  if (r.mismatch) reasons.push(`autoría no coincide (${r.mismatch})`);
+  if (r.mismatch) reasons.push(`authorship disagrees (${r.mismatch})`);
 
   const path = join("src/content", medium, `${r.slug}.md`);
   const text = await readFile(path, "utf8");
@@ -74,7 +74,7 @@ for (const r of rows) {
     continue;
   }
   if (!additions.length) {
-    skipped.push([r.title, "nada nuevo que añadir"]);
+    skipped.push([r.title, "nothing new to add"]);
     continue;
   }
 
@@ -91,7 +91,7 @@ for (const r of rows) {
   written.push([r.title, rendered.join(" · ")]);
 }
 
-console.log(`${dry ? "[simulación] " : ""}escritas ${written.length}`);
+console.log(`${dry ? "[dry run] " : ""}${written.length} written`);
 for (const [t, w] of written) console.log(`  ${t.padEnd(36)} ${w}`);
 console.log(`\nomitidas ${skipped.length}`);
 for (const [t, why] of skipped) console.log(`  ${t.padEnd(36)} ${why}`);

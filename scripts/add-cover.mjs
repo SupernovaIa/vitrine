@@ -17,18 +17,18 @@ const forcedAccent = argv.includes("--accent") ? argv[argv.indexOf("--accent") +
 const [medium, slug, imagePath] = argv;
 
 if (forcedAccent && !/^#[0-9a-fA-F]{6}$/.test(forcedAccent)) {
-  console.error(`--accent espera #rrggbb, no ${forcedAccent}`);
+  console.error(`--accent expects #rrggbb, not ${forcedAccent}`);
   process.exit(1);
 }
 
 if (!medium || !slug || !imagePath) {
-  console.error("uso: node scripts/add-cover.mjs <medium> <slug> <imagen>");
+  console.error("usage: node scripts/add-cover.mjs <medium> <slug> <image>");
   process.exit(1);
 }
 
 const entry = join(root, "src/content", medium, `${slug}.md`);
 await access(entry).catch(() => {
-  console.error(`no existe la entrada: ${entry}`);
+  console.error(`no such entry: ${entry}`);
   process.exit(1);
 });
 
@@ -47,7 +47,7 @@ const meta = await input.metadata();
 
 if (meta.width < 480) {
   console.warn(
-    `⚠ ${meta.width}px de ancho: por debajo de 480 se verá blanda en la fila destacada`,
+    `⚠ ${meta.width}px wide: under 480 it goes soft in the featured row`,
   );
 }
 
@@ -142,7 +142,7 @@ async function extractAccent(file) {
 const source = await readFile(entry, "utf8");
 const match = source.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
 if (!match) {
-  console.error("frontmatter no reconocido");
+  console.error("unrecognised frontmatter");
   process.exit(1);
 }
 const [, fm, body] = match;
@@ -154,9 +154,9 @@ await writeFile(entry, `---\n${kept.join("\n")}\n---\n${body}`, "utf8");
 /* sharp reports `size` only for buffer inputs, so ask the filesystem. */
 const kb = async (f) => `${Math.round((await stat(f)).size / 1024)} KB`;
 console.log(`${medium}/${slug}`);
-console.log(`  imagen  ${meta.width}×${meta.height} ${meta.format} → ${written.width}×${written.height} jpg`);
-console.log(`  peso    ${await kb(resolve(imagePath))} → ${await kb(out)}`);
-console.log(`  accent  ${accent ?? "(sin color legible: usa el del medio)"}${forcedAccent ? " (a mano)" : ""}`);
+console.log(`  image   ${meta.width}×${meta.height} ${meta.format} → ${written.width}×${written.height} jpg`);
+console.log(`  weight  ${await kb(resolve(imagePath))} → ${await kb(out)}`);
+console.log(`  accent  ${accent ?? "(no readable hue: falls back to the medium's)"}${forcedAccent ? " (by hand)" : ""}`);
 
 /* Hue/saturation/lightness conversions. Declarations, so hoisting lets the work
    above call them before they appear here. */

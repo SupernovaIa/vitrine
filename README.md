@@ -2,239 +2,241 @@
 
 **https://vitrine-supernovaias-projects.vercel.app**
 
-Registro personal de películas, series, libros y videojuegos. Web pública de
-lectura, escritura solo desde el repo: no hay backend, ni base de datos, ni login.
+A personal record of films, series, books and video games. Public to read,
+writable only from the repo: no backend, no database, no login.
 
-Cada entrada es un fichero Markdown. `git` es el almacenamiento, el historial y
-la copia de seguridad.
+Every entry is a Markdown file. `git` is the storage, the history and the backup.
 
-Las 73 entradas iniciales vienen de las cuatro bases de datos de Notion
-(`scripts/notion-export.json` + `scripts/import-notion.mjs`). **Ese import se
-hizo una vez y no se repite.** El export guarda los títulos tal como estaban en
-Notion, dos de ellos mal (*Tregua*, *The Cult of the Lamb*), así que reejecutarlo
-pisaría las correcciones. Se conserva como registro de lo que había, no como algo
-que se vuelva a correr.
+The interface is in Spanish (Spain). Everything else here — this file, the code,
+the scripts, the commit messages — is in English. The only Spanish that belongs
+outside `src/content/` is a string a visitor will read.
 
-## Arrancar
+The 73 initial entries came from four Notion databases
+(`scripts/notion-export.json` + `scripts/import-notion.mjs`). **That import ran
+once and is not repeated.** The export keeps the titles exactly as Notion had
+them, two of them wrong (*Tregua*, *The Cult of the Lamb*), so re-running it
+would trample the corrections. It stays as a record of what was there, not as
+something to run again.
+
+## Getting started
 
 ```sh
 pnpm install
 pnpm dev      # http://localhost:4321
-pnpm check    # tipos + validación del esquema
+pnpm check    # types + schema validation
 pnpm build
 ```
 
-## Añadir algo
+## Adding something
 
-Crea un `.md` en la colección que toque (`films`, `series`, `books`, `games`).
-El nombre del fichero es la URL.
+Create a `.md` in the collection it belongs to (`films`, `series`, `books`,
+`games`). The filename is the URL.
 
 ```md
 ---
 title: "Hollow Knight"
-year: 2017                    # opcional
-by: "Team Cherry"             # dirección / autoría / estudio — opcional
+year: 2017                    # optional
+by: "Team Cherry"             # direction / authorship / studio — optional
 status: done                  # pending | active | done | dropped
-tier: S                       # S | A | B | C | D — omítelo si no lo has decidido
-platforms: ["PC", "Switch"]   # juegos: varias a la vez
+tier: S                       # S | A | B | C | D — omit it if undecided
+platforms: ["PC", "Switch"]   # games: several at once
 hours: 41
 completion: "story+extras"    # story | story+extras | full
-genre: "Metroidvania"         # la clasificación principal, una sola
-tags: ["indie"]               # las demás, tantas como quieras
+genre: "Metroidvania"         # the primary classification, exactly one
+tags: ["indie"]               # everything else, as many as you like
 finished: 2024-11-04
-revisits: 1                   # 0 = una sola vez
-accent: "#4a6f9c"             # color dominante de la portada
-hook: "Una línea sin spoilers."
-cover: ./hollow-knight.jpg    # opcional, junto al .md
+revisits: 1                   # 0 = once only
+accent: "#4a6f9c"             # dominant colour of the cover
+hook: "One line, no spoilers."
+cover: ./hollow-knight.jpg    # optional, next to the .md
 quotes:
-  - "Una cita que merezca guardarse."
+  - "A line worth keeping."
 ---
 
-La reseña, en Markdown. Tan larga o tan corta como quieras.
+The review, in Markdown. As long or as short as you like.
 ```
 
-Campos por medio, además del tronco común: `runtime` (películas);
-`seasons`, `episodes`, `at: [temporada, episodio]`, `episodesSeen` (series);
-`pages`, `pagesRead`, `physical` (libros); `platforms`, `hours`, `completion`
-(juegos).
+Per-medium fields, on top of the shared trunk: `runtime` (films); `seasons`,
+`episodes`, `at: [season, episode]`, `episodesSeen` (series); `pages`,
+`pagesRead`, `physical` (books); `platforms`, `hours`, `completion` (games).
 
-### Cuatro decisiones de modelado
+### Four modelling decisions
 
-Vienen del esquema de Notion, y cada una se separa de él a propósito:
+They come from the Notion schema, and each departs from it on purpose:
 
-1. **Cuatro estados, no seis.** `Pendiente` y `Sin empezar` eran lo mismo,
-   separados solo porque las cuatro bases se crearon aparte. `De nuevo` mezclaba
-   un estado con una cuenta: ahora es `revisits`.
-2. **`tier` sin "Por decidir".** No es un valor de la escala, es su ausencia. Una
-   entrada terminada sin `tier` se muestra como "por decidir", derivado en vez de
-   guardado, así que los dos no pueden desincronizarse.
-3. **No hay `canon`.** Tier S ya significa "imprescindible", y dos campos para
-   una idea acaban discrepando.
-4. **`platforms` es una lista.** Hollow Knight está en PC *y* en Switch.
+1. **Four statuses, not six.** `Pendiente` and `Sin empezar` were the same
+   thing, kept apart only because the four databases were created separately.
+   `De nuevo` mixed a status with a count: it is now `revisits`.
+2. **`tier` with no "Por decidir".** That is not a value on the scale, it is the
+   absence of one. A finished entry with no `tier` renders as "por decidir",
+   derived rather than stored, so the two cannot drift apart.
+3. **No `canon`.** Tier S already means "essential", and two fields for one idea
+   end up disagreeing.
+4. **`platforms` is a list.** Hollow Knight is on PC *and* on Switch.
 
-El esquema completo, con el porqué de cada decisión, está en
-`src/content.config.ts`. Si un campo falta o tiene el tipo mal, **el build
-falla** — la validación ocurre antes de desplegar, no después.
+The full schema, with the reasoning behind each decision, is in
+`src/content.config.ts`. If a field is missing or mistyped, **the build fails** —
+validation happens before deploying, not after.
 
-## Portadas
+## Covers
 
-Una por entrada, con el script:
+One per entry, with the script:
 
 ```sh
 node scripts/add-cover.mjs games hollow-knight ~/Downloads/hk.png
 ```
 
-Hace tres cosas: normaliza la imagen (máximo 900px de ancho, JPEG de calidad 88 —
-800 KB de PNG salen a ~93 KB sin pérdida visible), le saca el color de acento, y
-escribe `cover:` y `accent:` en el frontmatter. No hace falta tocar el `.md` a
-mano; de hecho no añadas `cover:` antes de que exista la imagen, porque el
-esquema la valida en build y el build fallará.
+It does three things: normalises the image (900px wide at most, JPEG at quality
+88 — an 800 KB PNG comes out around 93 KB with no visible loss), derives the
+accent colour from it, and writes `cover:` and `accent:` into the frontmatter.
+There is no need to touch the `.md` by hand; in fact do not add `cover:` before
+the image exists, because the schema validates it at build time and the build
+will fail.
 
-Cine y series van en bloque, sin clave de ninguna API:
+Films and series go in one pass, with no API key at all:
 
 ```sh
-node scripts/fetch-tmdb-covers.mjs            # dice qué obra empareja con cada entrada
-node scripts/fetch-tmdb-covers.mjs --apply    # y entonces las coloca
+node scripts/fetch-tmdb-covers.mjs            # says which work matches each entry
+node scripts/fetch-tmdb-covers.mjs --apply    # and only then places them
 ```
 
-Wikidata guarda el propio id de TMDB (`P4947` cine, `P4983` series) y
-`image.tmdb.org` sirve las imágenes sin autenticación: lo que pide clave es la
-*API*, no la CDN. Así que la identidad sale de Wikidata —consultable, y con
-fecha de publicación para desempatar los cuatro *Titanic*— y del HTML de la
-ficha pública sale solo la ruta del póster. El reparto es deliberado: la mitad
-frágil (raspar marcado) no decide nada, solo acarrea un nombre de fichero.
+Wikidata stores the TMDB id itself (`P4947` for films, `P4983` for series) and
+`image.tmdb.org` serves the artwork unauthenticated: what needs a key is the
+*API*, not the CDN. So identity comes from Wikidata — queryable, and carrying the
+publication date that separates the four films called *Titanic* — and the public
+page's HTML yields nothing but the poster path. The split is deliberate: the
+fragile half (scraping markup) decides nothing, it only carries a filename.
 
-Cuando la etiqueta exacta no casa —Notion escribió los títulos en minúscula de
-frase, y `rdfs:label` distingue mayúsculas; y *El indomable Will Hunting* es un
-alias, no una etiqueta— hay una segunda pasada por `wbsearchentities`, que ignora
-las mayúsculas y lee alias. Sus resultados vuelven a pasar por el mismo SPARQL
-que exige id de TMDB y fecha, porque también devuelve libros y canciones con esas
-palabras.
+When the exact label does not match — Notion wrote its titles in sentence case
+and `rdfs:label` is case-sensitive; and *El indomable Will Hunting* is an alias,
+not a label — a second pass goes through `wbsearchentities`, which ignores case
+and reads aliases. Its results go back through the same SPARQL that demands a
+TMDB id and a date, because it also returns books and songs under those words.
 
-**Repasa siempre la salida en seco antes de `--apply`.** El año de la entrada
-descarta al candidato que no cuadra, y ahí se ve: `super-mario-bros` emparejaba
-con la de imagen real de 1993 teniendo `year: 2023`. Cuando ningún título
-desempata, `title-overrides.json` acepta un Q-número que pina el ítem.
+**Always review the dry run before `--apply`.** The entry's year discards the
+candidate that does not fit, and that is where you see it: `super-mario-bros`
+was matching the 1993 live-action film while carrying `year: 2023`. When no
+title can disambiguate at all, `title-overrides.json` accepts a Q-number that
+pins the item outright.
 
-Los juegos, igual, pero necesitan dos tiendas porque ninguna cubre la
-estantería sola:
+Games work the same way, but need two stores because neither covers the shelf
+alone:
 
 ```sh
 node scripts/fetch-game-covers.mjs --apply
 ```
 
-**Steam** para lo que tenga AppID (`P1733` en Wikidata): `library_600x900_2x.jpg`
-mide exactamente 600×900, que es el 2:3 al que recorta la rejilla. **El eShop
-europeo** para el resto, que son exclusivos de Switch sin AppID que buscar; su
-búsqueda es abierta, responde en español, y de las tres imágenes que trae cada
-ficha hay que quedarse con `image_url` **solo si es el packshot** —la caja
-física, 500×809—: Nintendo lo está retirando en las fichas digitales y ahí sirve
-el cuadrado en su lugar, que recortado a 2:3 destroza el arte.
+**Steam** for anything with an AppID (`P1733` on Wikidata):
+`library_600x900_2x.jpg` is exactly 600×900, which is the 2:3 the grid crops to.
+**The European eShop** for the rest, which are Switch exclusives with no AppID to
+find; its search is open, it answers in Spanish, and of the three images each
+record carries you take `image_url` **only if it is the packshot** — the physical
+box, 500×809. Nintendo has been retiring box art on digital-first listings, and
+those records serve the square in its place, which a 2:3 crop destroys.
 
-`Leyendas Pokémon: Arceus` es justo ese caso, en los cinco idiomas del eShop, y
-su caja está puesta a mano con `add-cover.mjs`.
+`Leyendas Pokémon: Arceus` is exactly that case, in all five eShop locales, and
+its box was placed by hand with `add-cover.mjs`.
 
-Si el color que saca no es el que domina la portada, `--accent "#5ab5c1"` lo
-fija a mano. Pasa cuando el campo es oscuro y lo vivo es minoritario: *El
-universo elegante* es negro con una nebulosa teal y naranja, y el script
-respondió con un marrón, porque los filamentos naranjas son más numerosos pero
-están a luminosidad 0.26 frente al 0.53 del núcleo teal.
+If the colour it derives is not the one that dominates the cover,
+`--accent "#5ab5c1"` pins it by hand. That happens when the field is dark and
+the vivid part is a minority: *El universo elegante* is black with a teal and
+orange nebula, and the script answered with a brown, because the orange
+filaments are more numerous but sit at lightness 0.26 against the teal core's
+0.53.
 
-**Qué imagen buscar:** desde 600×900 va sobrado (el mayor tamaño en que se
-muestra es 300px en la ficha, y eso cubre pantallas 3x). El ratio da igual: se
-recorta a 2:3, que es lo que mantiene la rejilla uniforme.
+**What image to look for:** anything from 600×900 is plenty (the largest it is
+ever displayed is 300px on the detail page, which covers 3x screens). The ratio
+does not matter: it is cropped to 2:3, which is what keeps the grid even.
 
-Astro las convierte a AVIF/WebP con `width`/`height` en el HTML, así que no hay
-saltos de layout. Todas se normalizan a 2:3.
+Astro converts them to AVIF/WebP with `width`/`height` in the HTML, so there is
+no layout shift. All of them normalise to 2:3.
 
-Sin portada no se rompe nada: se dibuja una tarjeta tipográfica con el título, la
-autoría y el año, y ocupa exactamente el mismo hueco que una portada real.
+Nothing breaks without a cover: a typographic card is drawn with the title, the
+authorship and the year, and it occupies exactly the same space as a real cover.
 
-**Sobre una portada el pie es solo el año.** No rotula el título ni la autoría,
-porque la portada ya los lleva impresos: un póster de cine los pone en una franja
-fina abajo y una superposición los libra, pero una sobrecubierta los pone en el
-centro, y *Pensar rápido, pensar despacio* imprimía DANIEL KAHNEMAN debajo de
-nuestro propio DANIEL KAHNEMAN, solapados.
+**Over a cover, the caption is the year alone.** It does not label the title or
+the authorship, because the cover already carries them printed: a film poster
+puts them in a thin band at the bottom and an overlay spares them, but a jacket
+puts them in the middle, and *Pensar rápido, pensar despacio* was printing
+DANIEL KAHNEMAN underneath our own DANIEL KAHNEMAN, overlapping.
 
-### Cómo se elige el `accent`
+### How the `accent` is chosen
 
-No es el color dominante de la imagen. En un póster el color más frecuente es el
-negro del fondo (`#080808` en Hollow Knight), y saturar un gris **se inventa un
-tono** — con eso, una portada azul salía roja.
+It is not the image's dominant colour. On a poster the most frequent colour is
+the black of the background (`#080808` on Hollow Knight), and saturating a grey
+**invents a hue** — that turned a blue cover red.
 
-Lo que hace el script es muestrear la imagen pequeña, descartar los píxeles
-demasiado oscuros, claros o grises para tener tono fiable, y quedarse con el
-grupo de tono que más peso cromático acumula. En Hollow Knight da `#1d78b9`, que
-es el cian que cualquiera nombraría al mirar la portada. Si la imagen es
-monocroma de verdad, no escribe `accent` y la entrada usa el color de su medio.
+What the script does is sample the image small, discard the pixels too dark, too
+light or too grey to have a trustworthy hue, and keep the hue group with the most
+chromatic weight behind it. On Hollow Knight that gives `#1d78b9`, the cyan
+anyone would name looking at the cover. If the image really is monochrome, it
+writes no `accent` and the entry falls back to its medium's colour.
 
-## Privacidad
+## Privacy
 
-**Este repositorio es público, así que aquí no va nada que no pueda leer
-cualquiera.** Incluido el historial de git: borrar algo después no lo borra de
-los commits anteriores.
+**This repository is public, so nothing goes here that anyone should not be able
+to read.** Including the git history: deleting something later does not delete it
+from earlier commits.
 
-`visibility: private` sigue haciendo lo que dice, pero conviene entender qué es
-exactamente: saca la entrada del sitio **en tiempo de build**, así que no está en
-el HTML desplegado ni oculta con CSS. Lo que *no* hace, con el repo público, es
-esconder el `.md` — ese se lee entrando al repo. Significa "no en la web", no "no
-público".
+`visibility: private` still does what it says, but it is worth being precise
+about what that is: it removes the entry from the site **at build time**, so it
+is neither in the deployed HTML nor hidden with CSS. What it does *not* do, with
+the repo public, is hide the `.md` — that is read by opening the repo. It means
+"not on the site", not "not public".
 
-El filtro vive en `allItems()` (`src/lib/media.ts`), que es la única puerta al
-contenido, para que una página nueva no pueda colar una entrada marcada como
-privada por olvidarse de comprobarlo.
+The filter lives in `allItems()` (`src/lib/media.ts`), which is the single door
+to the content, so that a new page cannot leak an entry marked private by
+forgetting to check.
 
-Si alguna vez quieres una entrada de verdad privada, no puede vivir en este
-repositorio.
+If you ever want an entry that is genuinely private, it cannot live in this
+repository.
 
-## Estructura
+## Structure
 
 ```
 src/
-  content.config.ts     esquema Zod: tronco común + campos por medio
+  content.config.ts     Zod schema: shared trunk + per-medium fields
   content/{films,series,books,games}/*.md
-  lib/media.ts          vocabulario de cada medio, progreso, estadísticas
+  lib/media.ts          each medium's vocabulary, progress, statistics
   components/           Cover, ItemCard, Filters, StatStrip
   pages/
-    index.astro         estantería + "ahora mismo" + filtros
+    index.astro         the shelf + "right now" + filters
     [medium]/[slug].astro
-  styles/               base.css (escala) + theme.css (color y tipografía)
+  styles/               base.css (the scale) + theme.css (colour and type)
 scripts/
-  add-cover.mjs         coloca una portada y le extrae el color de acento
-  fetch-book-covers.mjs  sobrecubiertas desde Open Library (solo libros)
-  fetch-tmdb-covers.mjs  pósters de cine y series, vía Wikidata + TMDB, sin clave
-  fetch-game-covers.mjs  cajas de juegos, vía Steam y el eShop europeo, sin clave
-  cover-overrides.json   portadas elegidas a mano, cuando el escaneo no vale
-  lookup-metadata.mjs    datos de la obra desde Wikidata; no escribe nada
-  lookup-books.mjs       lo mismo desde Open Library
-  apply-metadata.mjs     aplica un resultado ya revisado, sin sobreescribir
-  title-overrides.json   el identificador cuando el título no basta (o un QID)
-  import-notion.mjs      el import inicial, hecho una vez — no reejecutar
-  shot.mjs               capturas a un viewport real, sobre CDP
+  add-cover.mjs         places a cover and extracts its accent colour
+  fetch-book-covers.mjs  jackets from Open Library (books only)
+  fetch-tmdb-covers.mjs  film and series posters, via Wikidata + TMDB, keyless
+  fetch-game-covers.mjs  game boxes, via Steam and the European eShop, keyless
+  cover-overrides.json   artwork chosen by hand, when the scan will not do
+  lookup-metadata.mjs    facts about the work from Wikidata; writes nothing
+  lookup-books.mjs       the same from Open Library
+  apply-metadata.mjs     applies a reviewed result, without overwriting
+  title-overrides.json   the identifier when the title is not enough (or a QID)
+  import-notion.mjs      the initial import, run once — do not re-run
+  shot.mjs               screenshots at a real viewport, over CDP
 ```
 
-Los tokens siguen el mismo contrato semántico que `cheatsheets`: un hex fuera de
-`theme.css` es un bug.
+The tokens follow the same semantic contract as `cheatsheets`: a hex value
+outside `theme.css` is a bug.
 
-## Pendiente
+## Open
 
-- **Portadas.** 70 de 73. Cine, series y juegos están al 100%. Quedan **3
-  libros** cuyo mejor escaneo en Open Library no llega al mínimo: *La tregua*
-  (246×404), *Tus zonas erróneas* (128×196) y *Cómo hacer amigos e influir en
-  las personas*, ya descartado a mano en `cover-overrides.json`. Los tres se
-  cierran con `add-cover.mjs` en cuanto aparezca una imagen; no queda nada
-  automático por intentar.
+- **Covers are done.** 73 of 73. Four were sourced by hand, because no source
+  has them: `Leyendas Pokémon: Arceus` lost its packshot in every eShop locale,
+  and Open Library's best scans of *La tregua* and *Tus zonas erróneas* are
+  246×404 and 128×196.
 
-  Lo que **no** funciona, comprobado y no supuesto: iTunes Search responde
-  `resultCount: 0` a `media=movie` y `media=tvShow`; la cuota anónima de Google
-  Books está agotada; y los pósters *non-free* de Wikipedia sí se listan con
-  `prop=images` —era solo `pageimages` quien los saltaba— pero el uso legítimo
-  los limita a unos 275×362, por debajo del suelo utilizable.
-- **Fechas.** Notion no guardaba ninguna, así que la estantería se ordena por
-  estado y tier. Con `finished` relleno se puede ordenar cronológicamente y sacar
-  estadísticas por año (`shelfOrder` en `src/lib/media.ts`).
-- **Reseñas.** El cuerpo de las 73 entradas está vacío.
-- **`episodes` no se pinta en ningún sitio.** Están rellenos 14 de 15, y ni
-  `metaLine` ni la tabla de datos los muestran: la ficha de una serie enseña
-  temporadas y se queda ahí. O se pinta el campo, o ese relleno no sirve.
-- Ingesta desde APIs (TMDB / IGDB) si meter las cosas a mano cansa.
+  What does **not** work, checked rather than assumed: iTunes Search answers
+  `resultCount: 0` to both `media=movie` and `media=tvShow`; the anonymous Google
+  Books quota is spent; and Wikipedia's *non-free* posters are listed by
+  `prop=images` after all — it was only `pageimages` that skipped them — but fair
+  use caps them around 275×362, under the usable floor.
+- **Dates.** Notion stored none, so the shelf sorts by status and tier. With
+  `finished` filled in, chronological ordering and per-year statistics become
+  possible (`shelfOrder` in `src/lib/media.ts`).
+- **Reviews.** The body of all 73 entries is empty.
+- **`episodes` is rendered nowhere.** 14 of 15 are filled in, and neither
+  `metaLine` nor the data table shows them: a series page shows seasons and stops
+  there. Either the field gets rendered, or filling it in serves no purpose.
+- Ingestion from APIs (TMDB / IGDB) if entering things by hand gets tiring.

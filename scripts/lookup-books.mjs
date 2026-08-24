@@ -85,7 +85,7 @@ for (const file of files) {
       year: good?.first_publish_year ? [String(good.first_publish_year)] : [],
     },
     have: { pages: data.pages ?? null, year: data.year ?? null },
-    mismatch: suspect ? "emparejamiento sospechoso (adaptación, editorial como autor, o muy pocas páginas)" : null,
+    mismatch: suspect ? "suspect match (an adaptation, the publisher as author, or too few pages)" : null,
     ambiguous: null,
     qid: good?.key ?? null,
     error: err,
@@ -94,7 +94,7 @@ for (const file of files) {
 }
 
 const pad = (s, n) => String(s ?? "").slice(0, n).padEnd(n);
-console.log(`${pad("entrada", 34)} ${pad("Open Library", 32)} ${pad("autor", 22)} ${pad("pág.", 6)} año`);
+console.log(`${pad("entry", 34)} ${pad("Open Library", 32)} ${pad("author", 22)} ${pad("pages", 6)} year`);
 for (const r of results) {
   console.log(
     `${pad(r.title, 34)} ${pad(r.matched ?? "SIN MATCH", 32)} ${pad(r.author ?? "—", 22)} ` +
@@ -104,7 +104,7 @@ for (const r of results) {
 }
 const hit = results.filter((r) => r.matched).length;
 const withPages = results.filter((r) => r.values.pages.length).length;
-console.log(`\n${hit} de ${results.length} emparejados · ${withPages} con recuento de páginas`);
+console.log(`\n${hit} of ${results.length} matched · ${withPages} with a page count`);
 if (jsonOut) {
   await writeFile(jsonOut, JSON.stringify(results, null, 2));
   console.log(`escrito ${jsonOut}`);

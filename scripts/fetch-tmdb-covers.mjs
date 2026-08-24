@@ -50,11 +50,11 @@ const onlySlug = flag("--only");
 const pinnedId = flag("--id");
 
 if (pinnedId && !onlySlug) {
-  console.error("--id pina una obra concreta, así que exige --only <slug>");
+  console.error("--id pins one work, so it requires --only <slug>");
   process.exit(1);
 }
 if (onlyMedium && !["films", "series"].includes(onlyMedium)) {
-  console.error(`--medium acepta films o series, no ${onlyMedium}`);
+  console.error(`--medium takes films or series, not ${onlyMedium}`);
   process.exit(1);
 }
 
@@ -105,7 +105,7 @@ const sparql = async (query, attempt = 0) => {
   if (res.ok) return (await res.json()).results.bindings;
   if (attempt < 3 && [429, 500, 502, 503, 504].includes(res.status)) {
     const wait = 1500 * 2 ** attempt;
-    console.log(`   (Wikidata ${res.status}, reintento en ${wait / 1000}s)`);
+    console.log(`   (Wikidata ${res.status}, retrying in ${wait / 1000}s)`);
     await sleep(wait);
     return sparql(query, attempt + 1);
   }
@@ -182,7 +182,7 @@ const byQids = async (medium, qids) => {
 
 /** The one candidate this entry means, or an explanation of why none is. */
 const resolve = (found, data) => {
-  if (!found?.length) return { error: "sin ficha en Wikidata con id de TMDB" };
+  if (!found?.length) return { error: "no Wikidata item carrying a TMDB id" };
   /* De-duplicate: a work labelled the same in es and en arrives twice. */
   const seen = new Map();
   for (const c of found) if (!seen.has(c.qid)) seen.set(c.qid, c);
@@ -193,7 +193,7 @@ const resolve = (found, data) => {
   if (all.length === 1 && (!data.year || !all[0].year)) return { hit: all[0] };
 
   if (!data.year) {
-    return { error: `${all.length} obras con ese título y la entrada no tiene year` +
+    return { error: `${all.length} works under that title and the entry has no year` +
       ` (${all.map((c) => `${c.tmdb}:${c.year ?? "?"}`).join(", ")})` };
   }
   const year = Number(data.year);
@@ -205,7 +205,7 @@ const resolve = (found, data) => {
        survives where a dated disagreement does not. */
     const undated = all.filter((c) => !c.year);
     if (undated.length === 1) return { hit: undated[0], ambiguous: all.length > 1 };
-    return { error: `${all.length} obra(s), ninguna de ${year}` +
+    return { error: `${all.length} work(s), none from ${year}` +
       ` (${all.map((c) => `${c.tmdb}:${c.year ?? "?"}`).join(", ")})` };
   }
   close.sort((a, b) => Math.abs(a.year - year) - Math.abs(b.year - year));
@@ -256,7 +256,7 @@ for (const medium of onlyMedium ? [onlyMedium] : ["films", "series"]) {
   for (const { slug, data, title, qid } of pending) {
     const label = `${medium}/${slug}`;
     let id = pinnedId;
-    let note = pinnedId ? "  ← a mano" : "";
+    let note = pinnedId ? "  ← by hand" : "";
     let named = "";
 
     if (!id) {
@@ -265,11 +265,11 @@ for (const medium of onlyMedium ? [onlyMedium] : ["films", "series"]) {
         const hits = qid ? [qid] : await search(title);
         await sleep(400); // the search endpoint answers 429 well before the query one
         found = await byQids(medium, hits).catch((e) => {
-          console.log(`   (${e.message} al resolver ${slug})`);
+          console.log(`   (${e.message} while resolving ${slug})`);
           return [];
         });
         await sleep(200);
-        if (found.length) note = "  ← por búsqueda, no por etiqueta";
+        if (found.length) note = "  ← via search, not via label";
       }
       /* A pinned QID overrides the title match: it exists precisely for the
          entries where no title disambiguates. */
@@ -282,14 +282,14 @@ for (const medium of onlyMedium ? [onlyMedium] : ["films", "series"]) {
       }
       id = got.hit.tmdb;
       named = `${got.hit.label} (${got.hit.year ?? "?"})`;
-      if (got.ambiguous) note += "  ← varios candidatos del mismo año";
+      if (got.ambiguous) note += "  ← several candidates from the same year";
     }
 
     const path = await posterPath(medium, id);
     await sleep(400); // a public page, not an API: go slowly
     if (!path) {
-      skipped.push({ slug: label, reason: `la ficha ${id} no lleva póster` });
-      console.log(`✗ ${label.padEnd(46)} la ficha ${id} no lleva póster`);
+      skipped.push({ slug: label, reason: `page ${id} carries no poster` });
+      console.log(`✗ ${label.padEnd(46)} page ${id} carries no poster`);
       continue;
     }
 
@@ -298,15 +298,15 @@ for (const medium of onlyMedium ? [onlyMedium] : ["films", "series"]) {
     });
     await sleep(150);
     if (!res.ok) {
-      skipped.push({ slug: label, reason: `la imagen responde ${res.status}` });
-      console.log(`✗ ${label.padEnd(46)} la imagen responde ${res.status}`);
+      skipped.push({ slug: label, reason: `the image answers ${res.status}` });
+      console.log(`✗ ${label.padEnd(46)} the image answers ${res.status}`);
       continue;
     }
     const buf = Buffer.from(await res.arrayBuffer());
     const meta = await sharp(buf).metadata().catch(() => null);
     const ratio = meta?.width ? meta.height / meta.width : 0;
     if (ratio < MIN_RATIO || ratio > MAX_RATIO) {
-      const why = `${meta?.width ?? "?"}×${meta?.height ?? "?"}: no es un póster`;
+      const why = `${meta?.width ?? "?"}×${meta?.height ?? "?"}: not a poster`;
       skipped.push({ slug: label, reason: why });
       console.log(`✗ ${label.padEnd(46)} ${why}`);
       continue;
@@ -326,6 +326,6 @@ for (const medium of onlyMedium ? [onlyMedium] : ["films", "series"]) {
 
 if (!apply) await rm(tmp, { recursive: true, force: true });
 
-console.log(`\n${done.length} con póster${apply ? " aplicado" : " localizado"}, ${skipped.length} sin él`);
+console.log(`\n${done.length} ${apply ? "posters attached" : "posters found"}, ${skipped.length} without one`);
 for (const s of skipped) console.log(`   ${s.slug}: ${s.reason}`);
-if (!apply && done.length) console.log("\nrepasa los títulos de arriba y vuelve con --apply");
+if (!apply && done.length) console.log("\nreview the titles above, then come back with --apply");

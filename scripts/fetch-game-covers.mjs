@@ -44,7 +44,7 @@ const onlySlug = flag("--only");
 const pinnedSteam = flag("--steam");
 
 if (pinnedSteam && !onlySlug) {
-  console.error("--steam pina un AppID, así que exige --only <slug>");
+  console.error("--steam pins an AppID, so it requires --only <slug>");
   process.exit(1);
 }
 
@@ -79,7 +79,7 @@ const sparql = async (query, attempt = 0) => {
   if (res.ok) return (await res.json()).results.bindings;
   if (attempt < 3 && [429, 500, 502, 503, 504].includes(res.status)) {
     const wait = 1500 * 2 ** attempt;
-    console.log(`   (Wikidata ${res.status}, reintento en ${wait / 1000}s)`);
+    console.log(`   (Wikidata ${res.status}, retrying in ${wait / 1000}s)`);
     await sleep(wait);
     return sparql(query, attempt + 1);
   }
@@ -128,11 +128,11 @@ const search = async (title) => {
        blamed on the eShop, which never saw it. */
     if (attempt < 3 && [429, 500, 502, 503, 504].includes(res.status)) {
       const wait = 1500 * 2 ** attempt;
-      console.log(`   (búsqueda ${res.status}, reintento en ${wait / 1000}s)`);
+      console.log(`   (search ${res.status}, retrying in ${wait / 1000}s)`);
       await sleep(wait);
       return ask(q, attempt + 1);
     }
-    throw new Error(`búsqueda de Wikidata ${res.status}`);
+    throw new Error(`Wikidata search ${res.status}`);
   };
   const hits = await ask(title);
   if (hits.length) return hits;
@@ -186,7 +186,7 @@ const fromEshop = async (title, year) => {
   });
   const res = await fetch(url, { headers: { "User-Agent": UA } });
   await sleep(250);
-  if (!res.ok) return { error: `el eShop responde ${res.status}` };
+  if (!res.ok) return { error: `the eShop answers ${res.status}` };
   const docs = (await res.json()).response?.docs ?? [];
 
   /* `image_url` is *usually* the packshot but not always: Nintendo has been
@@ -197,24 +197,24 @@ const fromEshop = async (title, year) => {
   const named = docs.filter((d) => fold(d.title) === fold(title));
   if (!named.length) {
     return { error: docs.length
-      ? `${docs.length} resultado(s) en el eShop, ninguno con ese título exacto`
-      : "sin resultados en el eShop" };
+      ? `${docs.length} eShop result(s), none with that exact title`
+      : "no eShop results" };
   }
   const dated = (d) => Number((d.dates_released_dts ?? [])[0]?.slice(0, 4)) || null;
   /* Relevance puts "Mario Kart 8" (Wii U, 2014) above "Mario Kart 8 Deluxe",
      so the year is what decides, not the order. */
   const close = year ? named.filter((d) => dated(d) && Math.abs(dated(d) - year) <= 1) : named;
   if (!close.length) {
-    return { error: `${named.length} con ese título, ninguno de ${year}` +
+    return { error: `${named.length} under that title, none from ${year}` +
       ` (${named.map((d) => dated(d) ?? "?").join(", ")})` };
   }
   const doc = close.find((d) => d.image_url && isPackshot(d.image_url));
   if (!doc) {
-    return { error: "su ficha del eShop ya no tiene packshot, solo cuadrado y banner" };
+    return { error: "its eShop record no longer has a packshot, only a square and a banner" };
   }
   const img = await fetch(doc.image_url, { headers: { "User-Agent": UA } });
   await sleep(150);
-  if (!img.ok) return { error: `el packshot responde ${img.status}` };
+  if (!img.ok) return { error: `the packshot answers ${img.status}` };
   return {
     buf: Buffer.from(await img.arrayBuffer()),
     where: `eshop:${(doc.system_names_txt ?? ["?"])[0]}`,
@@ -252,7 +252,7 @@ for (const { slug, data, title } of pending) {
 
   if (pinnedSteam) {
     got = await fromSteam(pinnedSteam);
-    why = got ? "" : `el AppID ${pinnedSteam} no tiene arte de biblioteca`;
+    why = got ? "" : `AppID ${pinnedSteam} has no library artwork`;
   } else {
     let hits = [...(lookup.get(fold(title)) ?? []), ...(lookup.get(fold(data.title)) ?? [])];
     if (!hits.length) {
@@ -271,7 +271,7 @@ for (const { slug, data, title } of pending) {
     for (const h of hits) if (!seen.has(h.appid)) seen.set(h.appid, h);
     const steam = [...seen.values()].filter((h) => !year || !h.year || Math.abs(h.year - year) <= 1);
     if (steam.length === 1) got = await fromSteam(steam[0].appid);
-    else if (steam.length > 1) why = `${steam.length} AppIDs para ese título y año`;
+    else if (steam.length > 1) why = `${steam.length} AppIDs for that title and year`;
 
     /* Nothing on Steam is the normal case here, not a failure: a Switch
        exclusive has no AppID to find. */
@@ -283,15 +283,15 @@ for (const { slug, data, title } of pending) {
   }
 
   if (!got) {
-    skipped.push({ slug: label, reason: why || "sin arte en ninguna de las dos tiendas" });
-    console.log(`— ${label.padEnd(40)} ${why || "sin arte"}`);
+    skipped.push({ slug: label, reason: why || "no artwork in either store" });
+    console.log(`— ${label.padEnd(40)} ${why || "no artwork"}`);
     continue;
   }
 
   const meta = await sharp(got.buf).metadata().catch(() => null);
   const ratio = meta?.width ? meta.height / meta.width : 0;
   if (!meta?.width || meta.width < MIN_WIDTH || ratio < MIN_RATIO || ratio > MAX_RATIO) {
-    const bad = `${meta?.width ?? "?"}×${meta?.height ?? "?"}: no es una caja utilizable`;
+    const bad = `${meta?.width ?? "?"}×${meta?.height ?? "?"}: not a usable box`;
     skipped.push({ slug: label, reason: bad });
     console.log(`✗ ${label.padEnd(40)} ${bad}`);
     continue;
@@ -311,6 +311,6 @@ for (const { slug, data, title } of pending) {
 
 if (!apply) await rm(tmp, { recursive: true, force: true });
 
-console.log(`\n${done.length} con caja${apply ? " aplicada" : " localizada"}, ${skipped.length} sin ella`);
+console.log(`\n${done.length} ${apply ? "boxes attached" : "boxes found"}, ${skipped.length} without one`);
 for (const s of skipped) console.log(`   ${s.slug}: ${s.reason}`);
-if (!apply && done.length) console.log("\nrepasa los títulos de arriba y vuelve con --apply");
+if (!apply && done.length) console.log("\nreview the titles above, then come back with --apply");
