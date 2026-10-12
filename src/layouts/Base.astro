@@ -6,6 +6,8 @@ import "@fontsource-variable/jetbrains-mono";
 import "@fontsource-variable/newsreader";
 import "../styles/base.css";
 import "../styles/theme.css";
+import "../styles/transitions.css";
+import { ClientRouter } from "astro:transitions";
 
 interface Props {
   title: string;
@@ -24,6 +26,7 @@ const { title, description = "Todo lo que veo, leo y juego." } = Astro.props;
     <meta name="description" content={description} />
     <meta name="color-scheme" content="dark" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <ClientRouter />
   </head>
   <body>
     <a class="skip" href="#contenido">Saltar al contenido</a>
@@ -46,6 +49,61 @@ const { title, description = "Todo lo que veo, leo y juego." } = Astro.props;
         <p class="kicker">Registro personal</p>
       </div>
     </footer>
+
+    <script>
+      /* The cover is the one thing that travels between pages. A view-transition
+         name must be unique per page, and a Tier S entry sits on the shelf twice
+         (canon row and archive), so the name is never written in the markup: it
+         is handed to whichever card was actually clicked, and taken back before
+         the next click. */
+      const NAME = "item-cover";
+
+      const claim = (el: HTMLElement | null) => {
+        for (const old of document.querySelectorAll<HTMLElement>("[data-vt]")) {
+          old.style.viewTransitionName = "";
+          delete old.dataset.vt;
+        }
+        /* The detail page's own cover carries the name in CSS; park it so a
+           sibling card can take over without a duplicate. */
+        for (const main of document.querySelectorAll<HTMLElement>("[data-cover-morph]")) {
+          main.style.viewTransitionName = el ? "none" : "";
+        }
+        if (!el) return;
+        el.style.viewTransitionName = NAME;
+        el.dataset.vt = "";
+      };
+
+      document.addEventListener("click", (event) => {
+        if (event.defaultPrevented || event.button !== 0) return;
+        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        const card = (event.target as Element).closest?.<HTMLAnchorElement>("a.card");
+        claim(card?.querySelector<HTMLElement>(".card__poster") ?? null);
+      });
+
+      /* Going back, the cover has to land on the card it came from. The new
+         document is already in place here, so the path we left is still the
+         last one we saw. */
+      let lastPath = location.pathname;
+      const norm = (p: string) => p.replace(/\/$/, "") || "/";
+
+      document.addEventListener("astro:after-swap", () => {
+        if (!document.querySelector("[data-cover-morph]")) {
+          const from = norm(lastPath);
+          const card = Array.from(document.querySelectorAll<HTMLAnchorElement>("a.card")).find(
+            (a) => norm(new URL(a.href).pathname) === from,
+          );
+          const poster = card?.querySelector<HTMLElement>(".card__poster");
+          if (poster) {
+            poster.style.viewTransitionName = NAME;
+            poster.dataset.vt = "";
+          }
+        }
+      });
+
+      document.addEventListener("astro:page-load", () => {
+        lastPath = location.pathname;
+      });
+    </script>
 
     <style>
       /* Visible only when focused, which is the only time it is useful. Not

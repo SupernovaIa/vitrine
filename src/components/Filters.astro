@@ -110,86 +110,93 @@ const anyUndecided = items.some((i) => undecided(i));
        - the count is announced, because 73 items used to vanish in silence;
        - the selection lives in the URL, so a filtered view can be shared and
          survives the browser's back button. */
-  const root = document.querySelector<HTMLElement>("[data-filters]");
-  const grid = document.querySelector<HTMLElement>("[data-shelf]");
+  /* Bound on `astro:page-load`, not at module level: with the client router the
+     script runs once, but the shelf is a fresh DOM every time you come back. */
+  const init = () => {
+    const root = document.querySelector<HTMLElement>("[data-filters]");
+    const grid = document.querySelector<HTMLElement>("[data-shelf]");
 
-  if (root && grid) {
-    const cards = Array.from(grid.querySelectorAll<HTMLElement>("[data-medium]"));
-    const counter = document.querySelector<HTMLElement>("[data-shelf-count]");
-    const clear = document.querySelector<HTMLElement>("[data-clear-filters]");
-    const chips = Array.from(root.querySelectorAll<HTMLButtonElement>("[data-facet]"));
+    if (root && grid) {
+      const cards = Array.from(grid.querySelectorAll<HTMLElement>("[data-medium]"));
+      const counter = document.querySelector<HTMLElement>("[data-shelf-count]");
+      const clear = document.querySelector<HTMLElement>("[data-clear-filters]");
+      const chips = Array.from(root.querySelectorAll<HTMLButtonElement>("[data-facet]"));
 
-    /* Keyed by facet, not spelled out per facet: the two-argument version had
-       every facet's name written into matches(), countFor(), the per-chip count
-       and the reset, so adding the verdict meant editing five places and the
-       count silently kept comparing against one facet instead of the others. */
-    const PARAM = { medium: "medio", status: "estado", tier: "tier" } as const;
-    const FACETS = Object.keys(PARAM) as (keyof typeof PARAM)[];
-    const selected: Record<string, string> = { medium: "", status: "", tier: "" };
+      /* Keyed by facet, not spelled out per facet: the two-argument version had
+         every facet's name written into matches(), countFor(), the per-chip count
+         and the reset, so adding the verdict meant editing five places and the
+         count silently kept comparing against one facet instead of the others. */
+      const PARAM = { medium: "medio", status: "estado", tier: "tier" } as const;
+      const FACETS = Object.keys(PARAM) as (keyof typeof PARAM)[];
+      const selected: Record<string, string> = { medium: "", status: "", tier: "" };
 
-    const matches = (card: HTMLElement, sel: Record<string, string>) =>
-      FACETS.every((f) => !sel[f] || card.dataset[f] === sel[f]);
+      const matches = (card: HTMLElement, sel: Record<string, string>) =>
+        FACETS.every((f) => !sel[f] || card.dataset[f] === sel[f]);
 
-    const countFor = (sel: Record<string, string>) =>
-      cards.reduce((n, c) => n + (matches(c, sel) ? 1 : 0), 0);
+      const countFor = (sel: Record<string, string>) =>
+        cards.reduce((n, c) => n + (matches(c, sel) ? 1 : 0), 0);
 
-    const apply = ({ push = true } = {}) => {
-      let shown = 0;
-      for (const card of cards) {
-        const ok = matches(card, selected);
-        card.classList.toggle("is-hidden", !ok);
-        if (ok) shown++;
-      }
-      if (counter) counter.textContent = String(shown);
-      grid.classList.toggle("is-empty", shown === 0);
-
-      /* Each chip is counted against the other facets' current selection, so the
-         number describes what clicking it would actually give you — its own facet
-         is replaced, never intersected with itself. */
-      for (const chip of chips) {
-        const facet = chip.dataset.facet!;
-        const value = chip.dataset.value ?? "";
-        const n = countFor({ ...selected, [facet]: value });
-        const slot = chip.querySelector<HTMLElement>("[data-count]");
-        if (slot) slot.textContent = String(n);
-        const isSelected = selected[facet] === value;
-        chip.disabled = n === 0 && !isSelected;
-        chip.setAttribute("aria-pressed", String(isSelected));
-      }
-
-      if (push) {
-        const url = new URL(location.href);
-        for (const [facet, param] of Object.entries(PARAM)) {
-          if (selected[facet]) url.searchParams.set(param, selected[facet]);
-          else url.searchParams.delete(param);
+      const apply = ({ push = true } = {}) => {
+        let shown = 0;
+        for (const card of cards) {
+          const ok = matches(card, selected);
+          card.classList.toggle("is-hidden", !ok);
+          if (ok) shown++;
         }
-        history.replaceState(null, "", url);
+        if (counter) counter.textContent = String(shown);
+        grid.classList.toggle("is-empty", shown === 0);
+
+        /* Each chip is counted against the other facets' current selection, so the
+           number describes what clicking it would actually give you — its own facet
+           is replaced, never intersected with itself. */
+        for (const chip of chips) {
+          const facet = chip.dataset.facet!;
+          const value = chip.dataset.value ?? "";
+          const n = countFor({ ...selected, [facet]: value });
+          const slot = chip.querySelector<HTMLElement>("[data-count]");
+          if (slot) slot.textContent = String(n);
+          const isSelected = selected[facet] === value;
+          chip.disabled = n === 0 && !isSelected;
+          chip.setAttribute("aria-pressed", String(isSelected));
+        }
+
+        if (push) {
+          const url = new URL(location.href);
+          for (const [facet, param] of Object.entries(PARAM)) {
+            if (selected[facet]) url.searchParams.set(param, selected[facet]);
+            else url.searchParams.delete(param);
+          }
+          /* Keep the router's own state: wiping it breaks back-navigation. */
+          history.replaceState(history.state, "", url);
+        }
+      };
+
+      root.addEventListener("click", (event) => {
+        const button = (event.target as HTMLElement).closest<HTMLButtonElement>("[data-facet]");
+        if (!button || button.disabled) return;
+        selected[button.dataset.facet!] = button.dataset.value ?? "";
+        apply();
+      });
+
+      clear?.addEventListener("click", () => {
+        for (const f of FACETS) selected[f] = "";
+        apply();
+        root.querySelector<HTMLButtonElement>('[data-facet="medium"][data-value=""]')?.focus();
+      });
+
+      /* Restore from the URL before the first paint of the counts. */
+      const params = new URLSearchParams(location.search);
+      for (const [facet, param] of Object.entries(PARAM)) {
+        const v = params.get(param);
+        if (v && chips.some((c) => c.dataset.facet === facet && c.dataset.value === v)) {
+          selected[facet] = v;
+        }
       }
-    };
-
-    root.addEventListener("click", (event) => {
-      const button = (event.target as HTMLElement).closest<HTMLButtonElement>("[data-facet]");
-      if (!button || button.disabled) return;
-      selected[button.dataset.facet!] = button.dataset.value ?? "";
-      apply();
-    });
-
-    clear?.addEventListener("click", () => {
-      for (const f of FACETS) selected[f] = "";
-      apply();
-      root.querySelector<HTMLButtonElement>('[data-facet="medium"][data-value=""]')?.focus();
-    });
-
-    /* Restore from the URL before the first paint of the counts. */
-    const params = new URLSearchParams(location.search);
-    for (const [facet, param] of Object.entries(PARAM)) {
-      const v = params.get(param);
-      if (v && chips.some((c) => c.dataset.facet === facet && c.dataset.value === v)) {
-        selected[facet] = v;
-      }
+      apply({ push: false });
     }
-    apply({ push: false });
-  }
+  };
+
+  document.addEventListener("astro:page-load", init);
 </script>
 
 <style>

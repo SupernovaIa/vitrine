@@ -85,7 +85,7 @@ const facts = [
 
   <article class="page detail" style={`--item-accent: ${accentOf(item)}`}>
     <div class="detail__aside">
-      <div class="detail__cover">
+      <div class="detail__cover" data-cover-morph>
         <Cover item={item} width={300} eager caption={false} />
         {
           progress != null && (
@@ -201,6 +201,52 @@ const facts = [
     mask-image: linear-gradient(to bottom, #000 0%, transparent 100%);
     pointer-events: none;
     z-index: -1;
+    transform-origin: 22% 0;
+    animation: bloom 1100ms var(--ease) 80ms both;
+  }
+
+  /* The colour is the cover's, so it opens from behind it rather than fading in
+     flat: it swells from the top-left corner the cover lands in. */
+  @keyframes bloom {
+    from {
+      opacity: 0;
+      transform: scale(1.25) translateY(-6%);
+    }
+  }
+
+  /* Text arrives after the cover has landed, top to bottom. The delay is the
+     length of the morph, minus a little so the first line is already moving as
+     it settles. */
+  .detail__main > * {
+    animation: rise 700ms var(--ease) both;
+    animation-delay: calc(300ms + var(--n, 0) * 60ms);
+  }
+
+  .detail__main > :nth-child(2) { --n: 1; }
+  .detail__main > :nth-child(3) { --n: 2; }
+  .detail__main > :nth-child(4) { --n: 3; }
+  .detail__main > :nth-child(5) { --n: 4; }
+  .detail__main > :nth-child(6) { --n: 5; }
+  .detail__main > :nth-child(7) { --n: 6; }
+  .detail__main > :nth-child(n + 8) { --n: 7; }
+
+  .siblings {
+    animation: rise 700ms var(--ease) 700ms both;
+  }
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .wash,
+    .detail__main > *,
+    .siblings {
+      animation: none;
+    }
   }
 
   .detail {
@@ -218,6 +264,7 @@ const facts = [
   }
 
   .detail__cover {
+    view-transition-name: item-cover;
     position: relative;
     border-radius: var(--radius-lg);
     box-shadow:
